@@ -575,110 +575,110 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                 </div>
               )}
 
-              {/* FULL-SCREEN MODAL POPUP IMAGE VIEWER */}
-              {isOpen && (
-                <div
-                  onWheel={handleWheel}
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onTouchStart={handleTouchStart}
-                  onTouchMove={handleTouchMove}
-                  onTouchEnd={handleTouchEnd}
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    backgroundColor: 'rgba(0, 0, 0, 0.88)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 30,
-                    cursor: isDragging ? 'grabbing' : 'grab',
-                    overflow: 'hidden'
-                  }}
-                >
-                  {/* TOP HEADER BAR: TOP-LEFT Language Buttons + TOP-RIGHT Close Button */}
-                  <div style={{
-                    position: 'absolute',
-                    top: '10px',
-                    left: '12px',
-                    right: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    zIndex: 40,
-                    pointerEvents: 'auto'
-                  }}>
-                    {/* TOP-LEFT: Language Selector Buttons [ 한글 | English | 日本語 ] */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      backgroundColor: 'rgba(15, 23, 42, 0.75)',
-                      backdropFilter: 'blur(8px)',
-                      padding: '4px',
-                      borderRadius: '24px',
-                      border: '1px solid rgba(255, 255, 255, 0.2)'
-                    }}>
-                      {(['ko', 'en', 'ja'] as SupportedLanguage[]).map((lang) => {
-                        const labels: Record<SupportedLanguage, string> = {
-                          ko: '한글',
-                          en: 'English',
-                          ja: '日本語'
-                        };
-                        const isActive = popupLang === lang;
-                        return (
-                          <button
-                            key={lang}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSwitchPopupLanguage(lang);
-                            }}
-                            style={{
-                              padding: '5px 12px',
-                              borderRadius: '18px',
-                              border: 'none',
-                              fontSize: '12px',
-                              fontWeight: 700,
-                              backgroundColor: isActive ? '#E11D48' : 'transparent',
-                              color: isActive ? '#FFFFFF' : '#CBD5E1',
-                              cursor: 'pointer',
-                              transition: 'all 0.15s ease',
-                              boxShadow: isActive ? '0 2px 6px rgba(225, 29, 72, 0.4)' : 'none'
-                            }}
-                          >
-                            {labels[lang]}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* TOP-RIGHT: Dedicated Close Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleClosePopup();
-                      }}
+                  {/* FULL-SCREEN MODAL POPUP IMAGE VIEWER */}
+                  {isOpen && (
+                    <div
+                      onWheel={handleWheel}
+                      onMouseDown={handleMouseDown}
+                      onMouseMove={handleMouseMove}
+                      onMouseUp={handleMouseUp}
+                      onTouchStart={handleTouchStart}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
                       style={{
-                        backgroundColor: 'rgba(15, 23, 42, 0.75)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        color: '#FFFFFF',
-                        borderRadius: '20px',
-                        padding: '6px 12px',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
+                        position: 'absolute',
+                        inset: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.88)',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        backdropFilter: 'blur(8px)',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
+                        justifyContent: 'center',
+                        zIndex: 30,
+                        cursor: isDragging ? 'grabbing' : 'grab',
+                        overflow: 'hidden'
                       }}
                     >
-                      <X size={14} />
-                      <span>닫기</span>
-                    </button>
-                  </div>
+                      {/* LEFT SIDE: Vertical Language Selector Buttons [ 한글 / English / 日本語 ] */}
+                      <div style={{
+                        position: 'absolute',
+                        left: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        zIndex: 40,
+                        pointerEvents: 'auto'
+                      }}>
+                        {(['ko', 'en', 'ja'] as SupportedLanguage[]).map((lang) => {
+                          const labels: Record<SupportedLanguage, { text: string; flag: string }> = {
+                            ko: { text: '한글', flag: '🇰🇷' },
+                            en: { text: 'English', flag: '🇺🇸' },
+                            ja: { text: '日本語', flag: '🇯🇵' }
+                          };
+                          const isActive = popupLang === lang;
+                          return (
+                            <button
+                              key={lang}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSwitchPopupLanguage(lang);
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '8px 14px',
+                                borderRadius: '12px',
+                                border: isActive ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                backgroundColor: isActive ? '#E11D48' : 'rgba(15, 23, 42, 0.85)',
+                                color: isActive ? '#FFFFFF' : '#CBD5E1',
+                                backdropFilter: 'blur(8px)',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                                boxShadow: isActive
+                                  ? '0 4px 12px rgba(225, 29, 72, 0.45)'
+                                  : '0 2px 6px rgba(0, 0, 0, 0.3)'
+                              }}
+                            >
+                              <span style={{ fontSize: '13px' }}>{labels[lang].flag}</span>
+                              <span>{labels[lang].text}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* TOP-RIGHT: Dedicated Close Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleClosePopup();
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: '12px',
+                          right: '12px',
+                          backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          color: '#FFFFFF',
+                          borderRadius: '20px',
+                          padding: '6px 14px',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          backdropFilter: 'blur(8px)',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                          zIndex: 40,
+                          pointerEvents: 'auto'
+                        }}
+                      >
+                        <X size={14} />
+                        <span>닫기</span>
+                      </button>
 
                   {/* Zoomable & Pannable Image Container */}
                   <div
