@@ -1,7 +1,6 @@
 package com.antigravity.meatguideoverlay.data.datasource
 
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
 import com.antigravity.meatguideoverlay.data.model.ActivePopupInfo
@@ -13,8 +12,8 @@ import java.io.FileOutputStream
 import java.io.InputStream
 
 /**
- * Local Data Source for managing the single Active Popup Image and metadata.
- * Handles atomic file writes, offline caching, and asset fallback.
+ * Local Data Source for managing multi-language Active Popup Images and metadata.
+ * Handles atomic file writes, offline caching for KO, EN, JA, and asset fallback.
  */
 class LocalPopupDataSource(
     private val context: Context,
@@ -23,8 +22,6 @@ class LocalPopupDataSource(
     companion object {
         private const val TAG = "LocalPopupDataSource"
         private const val METADATA_FILE_NAME = "active_popup.json"
-        private const val CACHED_IMAGE_FILE_NAME = "active_popup_image.jpg"
-        private const val TEMP_IMAGE_FILE_NAME = "temp_popup_image.tmp"
         private const val BUNDLED_DEFAULT_JSON = "default_active_popup.json"
         private const val BUNDLED_DEFAULT_IMAGE = "pork_guide_poster.jpg"
     }
@@ -33,7 +30,16 @@ class LocalPopupDataSource(
         get() = File(context.filesDir, METADATA_FILE_NAME)
 
     val cachedImageFile: File
-        get() = File(context.filesDir, CACHED_IMAGE_FILE_NAME)
+        get() = getCachedImageFile("ko")
+
+    fun getCachedImageFile(lang: String): File {
+        val sanitizedLang = when (lang.lowercase()) {
+            "en" -> "en"
+            "ja" -> "ja"
+            else -> "ko"
+        }
+        return File(context.filesDir, "active_popup_image_$sanitizedLang.jpg")
+    }
 
     suspend fun getActivePopupInfo(): ActivePopupInfo = withContext(Dispatchers.IO) {
         try {
@@ -48,7 +54,6 @@ class LocalPopupDataSource(
             Log.w(TAG, "Failed reading cached metadata, falling back to assets: ${e.message}")
         }
 
-        // Fallback to bundled asset default
         loadBundledDefaultInfo()
     }
 
@@ -68,23 +73,29 @@ class LocalPopupDataSource(
     }
 
     /**
-     * Ensures an offline image is always available.
-     * If cachedImageFile doesn't exist, copies the bundled default poster asset.
+     * Ensures an offline image is available for the given language.
+     * Falls back to Korean image or bundled default poster asset if language-specific image not cached.
      */
-    suspend fun ensureLocalImageAvailable(): File? = withContext(Dispatchers.IO) {
-        if (cachedImageFile.exists() && cachedImageFile.length() > 0) {
-            return@withContext cachedImageFile
+    suspend fun ensureLocalImageAvailable(lang: String = "ko"): File? = withContext(Dispatchers.IO) {
+        val targetFile = getCachedImageFile(lang)
+        if (targetFile.exists() && targetFile.length() > 0) {
+            return@withContext targetFile
         }
 
-        // Copy default image from assets
+        val koFile = getCachedImageFile("ko")
+        if (koFile.exists() && koFile.length() > 0) {
+            return@withContext koFile
+        }
+
+        // Copy default image from assets to KO cache
         try {
             context.assets.open(BUNDLED_DEFAULT_IMAGE).use { input ->
-                FileOutputStream(cachedImageFile).use { output ->
+                FileOutputStream(koFile).use { output ->
                     input.copyTo(output)
                 }
             }
             Log.d(TAG, "Default bundled poster image copied to cache.")
-            return@withContext cachedImageFile
+            return@withContext koFile
         } catch (e: Exception) {
             Log.e(TAG, "Failed extracting bundled image: ${e.message}", e)
         }
@@ -92,10 +103,11 @@ class LocalPopupDataSource(
     }
 
     /**
-     * Atomically saves newly downloaded image bytes to cache.
+     * Atomically saves newly downloaded image bytes to cache for a language.
      */
-    suspend fun saveDownloadedImage(inputStream: InputStream): Boolean = withContext(Dispatchers.IO) {
-        val tempFile = File(context.filesDir, TEMP_IMAGE_FILE_NAME)
+    suspend fun saveDownloadedImage(inputStream: InputStream, lang: String = "ko"): Boolean = withContext(Dispatchers.IO) {
+        val targetFile = getCachedImageFile(lang)
+        val tempFile = File(context.filesDir, "temp_popup_image_$lang.tmp")
         try {
             FileOutputStream(tempFile).use { output ->
                 inputStream.copyTo(output)
@@ -106,26 +118,24 @@ class LocalPopupDataSource(
                 return@withContext false
             }
 
-            // Verify image integrity by decoding bounds
             val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeFile(tempFile.absolutePath, options)
             if (options.outWidth <= 0 || options.outHeight <= 0) {
-                Log.e(TAG, "Downloaded file is not a valid image. Aborting replacement.")
+                Log.e(TAG, "Downloaded file for $lang is not a valid image. Aborting replacement.")
                 tempFile.delete()
                 return@withContext false
             }
 
-            // Atomic replace
-            if (cachedImageFile.exists()) {
-                cachedImageFile.delete()
+            if (targetFile.exists()) {
+                targetFile.delete()
             }
-            val success = tempFile.renameTo(cachedImageFile)
+            val success = tempFile.renameTo(targetFile)
             if (success) {
-                Log.d(TAG, "Successfully replaced cached active popup image.")
+                Log.d(TAG, "Successfully replaced cached active popup image for $lang.")
             }
             return@withContext success
         } catch (e: Exception) {
-            Log.e(TAG, "Failed saving downloaded image: ${e.message}", e)
+            Log.e(TAG, "Failed saving downloaded image for $lang: ${e.message}", e)
             if (tempFile.exists()) tempFile.delete()
             false
         }

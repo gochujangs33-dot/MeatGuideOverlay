@@ -8,14 +8,15 @@ import {
   RefreshCw,
   Sparkles,
   LogOut,
-  Info,
-  MessageSquare
+  MessageSquare,
+  Globe,
+  Languages
 } from 'lucide-react';
-import { ActivePopupInfo } from '../types/popup';
+import { ActivePopupInfo, SupportedLanguage } from '../types/popup';
 import {
   fetchActivePopup,
   subscribeToActivePopup,
-  uploadAndApplyPopup,
+  uploadAndApplyMultiLangPopup,
   validateImageFile,
   DEFAULT_ACTIVE_POPUP
 } from '../services/popupService';
@@ -28,11 +29,42 @@ interface Props {
 
 export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
   const [activePopup, setActivePopup] = useState<ActivePopupInfo>(DEFAULT_ACTIVE_POPUP);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  // Editable Speech Bubble Text
-  const [bubbleText, setBubbleText] = useState<string>(DEFAULT_ACTIVE_POPUP.bubbleText || '이 고기가 어떤 부위인지 궁금하신가요?');
+  // Selected files per language
+  const [selectedFiles, setSelectedFiles] = useState<{
+    ko: File | null;
+    en: File | null;
+    ja: File | null;
+  }>({
+    ko: null,
+    en: null,
+    ja: null
+  });
+
+  // Local object URLs for previews
+  const [previewUrls, setPreviewUrls] = useState<{
+    ko: string | null;
+    en: string | null;
+    ja: string | null;
+  }>({
+    ko: null,
+    en: null,
+    ja: null
+  });
+
+  // Current active editing language tab in admin upload panel
+  const [activeUploadLang, setActiveUploadLang] = useState<SupportedLanguage>('ko');
+
+  // Editable Speech Bubble Texts in 3 languages
+  const [bubbleTexts, setBubbleTexts] = useState<{
+    ko: string;
+    en: string;
+    ja: string;
+  }>({
+    ko: DEFAULT_ACTIVE_POPUP.bubbleTextKo || '이 고기가 어떤 부위인지 궁금하신가요?',
+    en: DEFAULT_ACTIVE_POPUP.bubbleTextEn || 'Wondering which cut of meat this is?',
+    ja: DEFAULT_ACTIVE_POPUP.bubbleTextJa || 'このお肉がどの部位か気になりますか？'
+  });
 
   // Active source toggle for the preview viewer: 'current' vs 'selected'
   const [previewSource, setPreviewSource] = useState<'current' | 'selected'>('current');
@@ -49,47 +81,62 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
   useEffect(() => {
     fetchActivePopup().then((info) => {
       setActivePopup(info);
-      if (info.bubbleText) {
-        setBubbleText(info.bubbleText);
-      }
+      setBubbleTexts({
+        ko: info.bubbleTextKo || info.bubbleText || DEFAULT_ACTIVE_POPUP.bubbleTextKo!,
+        en: info.bubbleTextEn || DEFAULT_ACTIVE_POPUP.bubbleTextEn!,
+        ja: info.bubbleTextJa || DEFAULT_ACTIVE_POPUP.bubbleTextJa!
+      });
     }).catch(console.error);
 
     const unsubscribe = subscribeToActivePopup((info) => {
       setActivePopup(info);
-      if (info.bubbleText) {
-        setBubbleText(info.bubbleText);
-      }
+      setBubbleTexts({
+        ko: info.bubbleTextKo || info.bubbleText || DEFAULT_ACTIVE_POPUP.bubbleTextKo!,
+        en: info.bubbleTextEn || DEFAULT_ACTIVE_POPUP.bubbleTextEn!,
+        ja: info.bubbleTextJa || DEFAULT_ACTIVE_POPUP.bubbleTextJa!
+      });
     });
 
     return () => unsubscribe();
   }, []);
 
-  // Cleanup object URL preview when file changes
+  // Update object URL previews when files change
   useEffect(() => {
-    if (!selectedFile) {
-      setPreviewUrl(null);
+    const urls: { ko: string | null; en: string | null; ja: string | null } = {
+      ko: selectedFiles.ko ? URL.createObjectURL(selectedFiles.ko) : null,
+      en: selectedFiles.en ? URL.createObjectURL(selectedFiles.en) : null,
+      ja: selectedFiles.ja ? URL.createObjectURL(selectedFiles.ja) : null
+    };
+    setPreviewUrls(urls);
+
+    const hasAny = !!(selectedFiles.ko || selectedFiles.en || selectedFiles.ja);
+    if (hasAny) {
+      setPreviewSource('selected');
+    } else {
       setPreviewSource('current');
-      return;
     }
 
-    const objectUrl = URL.createObjectURL(selectedFile);
-    setPreviewUrl(objectUrl);
-    setPreviewSource('selected'); // Auto-switch preview to the new file!
+    return () => {
+      if (urls.ko) URL.revokeObjectURL(urls.ko);
+      if (urls.en) URL.revokeObjectURL(urls.en);
+      if (urls.ja) URL.revokeObjectURL(urls.ja);
+    };
+  }, [selectedFiles]);
 
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [selectedFile]);
-
-  const handleFileSelect = (file: File) => {
+  const handleFileSelect = (file: File, lang: SupportedLanguage) => {
     setErrorMessage(null);
     setSuccessMessage(null);
 
     const validation = validateImageFile(file);
     if (!validation.valid) {
-      setErrorMessage(validation.error || '유효하지 않은 파일입니다.');
+      setErrorMessage(`[${lang.toUpperCase()}] ${validation.error || '유효하지 않은 파일입니다.'}`);
       return;
     }
 
-    setSelectedFile(file);
+    setSelectedFiles((prev) => ({
+      ...prev,
+      [lang]: file
+    }));
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -107,24 +154,31 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
     setIsDragging(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFileSelect(e.dataTransfer.files[0]);
+      handleFileSelect(e.dataTransfer.files[0], activeUploadLang);
     }
   };
 
-  const handleCancelSelection = () => {
-    setSelectedFile(null);
-    setPreviewUrl(null);
+  const handleCancelSelection = (lang: SupportedLanguage) => {
+    setSelectedFiles((prev) => ({
+      ...prev,
+      [lang]: null
+    }));
     setErrorMessage(null);
-    setPreviewSource('current');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  const hasChanges = selectedFile !== null || (bubbleText.trim() !== (activePopup.bubbleText || '').trim());
+  const hasAnyFileSelected = !!(selectedFiles.ko || selectedFiles.en || selectedFiles.ja);
+  const hasBubbleTextChanged =
+    bubbleTexts.ko.trim() !== (activePopup.bubbleTextKo || activePopup.bubbleText || '').trim() ||
+    bubbleTexts.en.trim() !== (activePopup.bubbleTextEn || '').trim() ||
+    bubbleTexts.ja.trim() !== (activePopup.bubbleTextJa || '').trim();
+
+  const hasChanges = hasAnyFileSelected || hasBubbleTextChanged;
 
   const handleApplyToTablet = async () => {
-    if (!hasChanges && !selectedFile) return;
+    if (!hasChanges) return;
 
     setIsUploading(true);
     setUploadProgress(0);
@@ -132,25 +186,24 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
     setSuccessMessage(null);
 
     try {
-      const updated = await uploadAndApplyPopup(
-        selectedFile,
-        bubbleText,
+      const updated = await uploadAndApplyMultiLangPopup(
+        selectedFiles,
+        bubbleTexts,
         activePopup,
         (progress) => setUploadProgress(progress)
       );
 
       setActivePopup(updated);
-      setSelectedFile(null);
-      setPreviewUrl(null);
+      setSelectedFiles({ ko: null, en: null, ja: null });
       setPreviewSource('current');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
 
-      setSuccessMessage(`태블릿 적용이 완료되었습니다. (버전 ${updated.version})`);
+      setSuccessMessage(`태블릿 다국어(한·영·일) 적용이 완료되었습니다. (버전 ${updated.version})`);
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err: any) {
-      console.error('Failed to apply image:', err);
+      console.error('Failed to apply popup:', err);
       setErrorMessage(err.message || '적용 중 오류가 발생했습니다.');
     } finally {
       setIsUploading(false);
@@ -182,6 +235,18 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
     }
   };
 
+  const currentActiveImages = {
+    ko: activePopup.imageUrlKo || activePopup.imageUrl,
+    en: activePopup.imageUrlEn || activePopup.imageUrl,
+    ja: activePopup.imageUrlJa || activePopup.imageUrl
+  };
+
+  const langMetadata: Record<SupportedLanguage, { label: string; flag: string; hint: string }> = {
+    ko: { label: '한국어', flag: '🇰🇷', hint: '기본 한글 팝업 이미지' },
+    en: { label: 'English', flag: '🇺🇸', hint: '영어 팝업 이미지 (English Menu Poster)' },
+    ja: { label: '日本語', flag: '🇯🇵', hint: '일본어 팝업 이미지 (日本語案内ポスター)' }
+  };
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#F8F9FA', color: '#1E293B', fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
       {/* Top Header Bar */}
@@ -202,14 +267,14 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
             color: '#E11D48',
             display: 'flex'
           }}>
-            <FileImage size={24} />
+            <Globe size={24} />
           </div>
           <div>
             <h1 style={{ fontSize: '20px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-              고기 부위 안내 이미지 관리
+              고기 부위 안내 다국어 관리 (한·영·일)
             </h1>
             <p style={{ fontSize: '13px', color: '#64748B', margin: '2px 0 0 0' }}>
-              태블릿에 표시할 완성된 안내 이미지와 말풍선 문구를 등록하고 적용합니다.
+              3개 국어(한글/영어/일어) 팝업 이미지 및 3초 순환 말풍선 문구를 통합 관리합니다.
             </p>
           </div>
         </div>
@@ -245,7 +310,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
       </header>
 
       {/* Main Container */}
-      <main style={{ maxWidth: '1320px', margin: '28px auto', padding: '0 24px' }}>
+      <main style={{ maxWidth: '1380px', margin: '28px auto', padding: '0 24px' }}>
         {/* Banner Alert Messages */}
         {successMessage && (
           <div style={{
@@ -286,15 +351,15 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
         {/* 2-Column Responsive Layout */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'minmax(380px, 480px) minmax(460px, 1fr)',
+          gridTemplateColumns: 'minmax(420px, 540px) minmax(480px, 1fr)',
           gap: '28px',
           alignItems: 'start'
         }}>
           {/* ==================================================== */}
-          {/* LEFT COLUMN: Image Registration & Management Area */}
+          {/* LEFT COLUMN: Multi-Language Registration & Management Area */}
           {/* ==================================================== */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* 1. Speech Bubble Text Customization Card */}
+            {/* 1. Speech Bubble Text Multi-Language Customization */}
             <section style={{
               backgroundColor: '#FFFFFF',
               borderRadius: '16px',
@@ -302,39 +367,105 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
               padding: '20px 24px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                <MessageSquare size={18} color="#E11D48" />
-                <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-                  돼지 캐릭터 말풍선 문구 설정
-                </h2>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <MessageSquare size={18} color="#E11D48" />
+                  <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                    말풍선 3초 순환 문구 (한·영·일)
+                  </h2>
+                </div>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  backgroundColor: '#FFF0F5',
+                  color: '#E11D48',
+                  padding: '2px 8px',
+                  borderRadius: '6px'
+                }}>
+                  3초마다 자동 순환
+                </span>
               </div>
-              <p style={{ fontSize: '12px', color: '#64748B', margin: '0 0 12px 0' }}>
-                태블릿 키오스크 화면의 돼지 캐릭터 옆에 표시될 문구를 입력하세요. (우측 미리보기에 즉시 반영됩니다)
+              <p style={{ fontSize: '12px', color: '#64748B', margin: '0 0 14px 0' }}>
+                태블릿 키오스크 화면에서 돼지 캐릭터 옆 말풍선이 3초 주기로 한글 ➔ 영어 ➔ 일본어로 자동 순환합니다.
               </p>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input
-                  type="text"
-                  value={bubbleText}
-                  onChange={(e) => setBubbleText(e.target.value)}
-                  placeholder="예: 이 고기가 어떤 부위인지 궁금하신가요?"
-                  style={{
-                    flex: 1,
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    border: '1.5px solid #CBD5E1',
-                    fontSize: '14px',
-                    color: '#0F172A',
-                    fontWeight: 600,
-                    outline: 'none',
-                    transition: 'border-color 0.15s ease'
-                  }}
-                  onFocus={(e) => (e.target.style.borderColor = '#E11D48')}
-                  onBlur={(e) => (e.target.style.borderColor = '#CBD5E1')}
-                />
+
+              {/* 3 Language Inputs */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {/* Korean */}
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    <span>🇰🇷 한국어 (기본)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={bubbleTexts.ko}
+                    onChange={(e) => setBubbleTexts((prev) => ({ ...prev, ko: e.target.value }))}
+                    placeholder="이 고기가 어떤 부위인지 궁금하신가요?"
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: '1.5px solid #CBD5E1',
+                      fontSize: '13px',
+                      color: '#0F172A',
+                      fontWeight: 600,
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                {/* English */}
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    <span>🇺🇸 English (영어)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={bubbleTexts.en}
+                    onChange={(e) => setBubbleTexts((prev) => ({ ...prev, en: e.target.value }))}
+                    placeholder="Wondering which cut of meat this is?"
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: '1.5px solid #CBD5E1',
+                      fontSize: '13px',
+                      color: '#0F172A',
+                      fontWeight: 600,
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                {/* Japanese */}
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    <span>🇯🇵 日本語 (일본어)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={bubbleTexts.ja}
+                    onChange={(e) => setBubbleTexts((prev) => ({ ...prev, ja: e.target.value }))}
+                    placeholder="このお肉がどの部位か気になりますか？"
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: '1.5px solid #CBD5E1',
+                      fontSize: '13px',
+                      color: '#0F172A',
+                      fontWeight: 600,
+                      outline: 'none'
+                    }}
+                  />
+                </div>
               </div>
             </section>
 
-            {/* 2. New Image Registration Card */}
+            {/* 2. Multi-Language Popup Images Registration Card */}
             <section style={{
               backgroundColor: '#FFFFFF',
               borderRadius: '16px',
@@ -342,11 +473,14 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
               padding: '24px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-                  새 팝업 안내 이미지 등록
-                </h2>
-                {selectedFile && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Languages size={18} color="#E11D48" />
+                  <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                    언어별 팝업 이미지 등록
+                  </h2>
+                </div>
+                {hasAnyFileSelected && (
                   <span style={{
                     fontSize: '11px',
                     fontWeight: 700,
@@ -356,158 +490,176 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                     borderRadius: '6px',
                     border: '1px solid #FDE68A'
                   }}>
-                    미리보기 중 (미적용)
+                    새 이미지 선택됨 (미적용)
                   </span>
                 )}
               </div>
 
-              {/* Drag and Drop Zone or Preview */}
-              {!selectedFile ? (
-                <div
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                  style={{
-                    minHeight: '200px',
-                    border: `2px dashed ${isDragging ? '#E11D48' : '#CBD5E1'}`,
-                    backgroundColor: isDragging ? '#FFF1F2' : '#FAFAFA',
-                    borderRadius: '14px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '24px 20px',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    textAlign: 'center'
-                  }}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files.length > 0) {
-                        handleFileSelect(e.target.files[0]);
-                      }
-                    }}
-                    style={{ display: 'none' }}
-                  />
-
-                  <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '24px',
-                    backgroundColor: '#FEE2E2',
-                    color: '#E11D48',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: '12px'
-                  }}>
-                    <UploadCloud size={24} />
-                  </div>
-
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', marginBottom: '4px' }}>
-                    이미지 파일을 끌어다 놓거나 클릭하여 선택
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '12px' }}>
-                    완성된 팝업 안내 이미지 한 장을 업로드합니다.
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                    {['PNG', 'JPG', 'JPEG', 'WebP'].map((fmt) => (
-                      <span
-                        key={fmt}
-                        style={{
-                          backgroundColor: '#F1F5F9',
-                          color: '#475569',
-                          fontSize: '11px',
-                          fontWeight: 600,
-                          padding: '3px 8px',
-                          borderRadius: '6px'
-                        }}
-                      >
-                        {fmt}
-                      </span>
-                    ))}
-                    <span style={{ fontSize: '11px', color: '#94A3B8', padding: '3px 4px' }}>
-                      (최대 25MB)
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                /* Selected File Summary Container */
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  borderRadius: '12px',
-                  border: '1px solid #E2E8F0',
-                  backgroundColor: '#FAFAFA',
-                  overflow: 'hidden'
-                }}>
-                  <div style={{
-                    padding: '12px 14px',
-                    backgroundColor: '#FFFFFF',
-                    borderBottom: '1px solid #E2E8F0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                      <FileImage size={18} color="#E11D48" />
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                        {selectedFile.name}
-                      </span>
-                      <span style={{ fontSize: '12px', color: '#64748B' }}>
-                        ({formatFileSize(selectedFile.size)})
-                      </span>
-                    </div>
-
+              {/* Language Selection Tabs for Upload: [ 한국어 | English | 日本語 ] */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '6px',
+                backgroundColor: '#F1F5F9',
+                padding: '4px',
+                borderRadius: '10px',
+                marginBottom: '16px'
+              }}>
+                {(['ko', 'en', 'ja'] as SupportedLanguage[]).map((lang) => {
+                  const meta = langMetadata[lang];
+                  const isSelected = activeUploadLang === lang;
+                  const hasFile = !!selectedFiles[lang];
+                  return (
                     <button
-                      onClick={handleCancelSelection}
-                      disabled={isUploading}
+                      key={lang}
+                      onClick={() => setActiveUploadLang(lang)}
                       style={{
-                        background: 'none',
+                        padding: '8px 6px',
+                        borderRadius: '8px',
                         border: 'none',
-                        color: '#64748B',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        backgroundColor: isSelected ? '#FFFFFF' : 'transparent',
+                        color: isSelected ? '#E11D48' : '#475569',
+                        boxShadow: isSelected ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        padding: '4px 8px',
-                        borderRadius: '6px'
+                        justifyContent: 'center',
+                        gap: '4px'
                       }}
                     >
-                      <X size={16} />
-                      <span>선택 취소</span>
+                      <span>{meta.flag}</span>
+                      <span>{meta.label}</span>
+                      {hasFile && (
+                        <span style={{ width: '6px', height: '6px', borderRadius: '3px', backgroundColor: '#E11D48' }} />
+                      )}
                     </button>
-                  </div>
+                  );
+                })}
+              </div>
 
-                  <div style={{
-                    padding: '10px 14px',
-                    backgroundColor: '#FFFBEB',
-                    borderBottom: '1px solid #FEF3C7',
-                    fontSize: '12px',
-                    color: '#B45309',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}>
-                    <Info size={14} color="#D97706" />
-                    <span>우측 태블릿 미리보기에서 실제 화면을 확인한 후 아래 적용 버튼을 누르세요.</span>
-                  </div>
+              {/* Upload Drop Zone for Currently Selected Language */}
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '8px', fontWeight: 600 }}>
+                  선택된 언어: <strong>{langMetadata[activeUploadLang].flag} {langMetadata[activeUploadLang].label}</strong> ({langMetadata[activeUploadLang].hint})
                 </div>
-              )}
+
+                {!selectedFiles[activeUploadLang] ? (
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{
+                      minHeight: '160px',
+                      border: `2px dashed ${isDragging ? '#E11D48' : '#CBD5E1'}`,
+                      backgroundColor: isDragging ? '#FFF1F2' : '#FAFAFA',
+                      borderRadius: '12px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '20px',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      textAlign: 'center'
+                    }}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                          handleFileSelect(e.target.files[0], activeUploadLang);
+                        }
+                      }}
+                      style={{ display: 'none' }}
+                    />
+
+                    <div style={{
+                      width: '42px',
+                      height: '42px',
+                      borderRadius: '21px',
+                      backgroundColor: '#FEE2E2',
+                      color: '#E11D48',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: '8px'
+                    }}>
+                      <UploadCloud size={22} />
+                    </div>
+
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '2px' }}>
+                      {langMetadata[activeUploadLang].label} 이미지 선택 또는 드래그
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#64748B' }}>
+                      PNG, JPG, JPEG, WebP (최대 25MB)
+                    </div>
+                  </div>
+                ) : (
+                  /* Selected File Box */
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    borderRadius: '10px',
+                    border: '1px solid #E2E8F0',
+                    backgroundColor: '#FAFAFA',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      padding: '10px 12px',
+                      backgroundColor: '#FFFFFF',
+                      borderBottom: '1px solid #E2E8F0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
+                        <FileImage size={16} color="#E11D48" />
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                          {selectedFiles[activeUploadLang]!.name}
+                        </span>
+                        <span style={{ fontSize: '11px', color: '#64748B' }}>
+                          ({formatFileSize(selectedFiles[activeUploadLang]!.size)})
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => handleCancelSelection(activeUploadLang)}
+                        disabled={isUploading}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#64748B',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '2px',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          padding: '2px 6px',
+                          borderRadius: '4px'
+                        }}
+                      >
+                        <X size={14} />
+                        <span>선택 취소</span>
+                      </button>
+                    </div>
+                    <div style={{ padding: '8px 12px', backgroundColor: '#FFFBEB', fontSize: '11px', color: '#B45309' }}>
+                      우측 태블릿 뷰어 상단 <strong>[{langMetadata[activeUploadLang].label}]</strong> 탭을 누르면 선택한 이미지가 미리 표시됩니다.
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Upload Progress Bar */}
               {isUploading && (
-                <div style={{ marginTop: '16px' }}>
+                <div style={{ marginTop: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#475569', marginBottom: '6px', fontWeight: 600 }}>
-                    <span>태블릿에 이미지 전송 중...</span>
+                    <span>태블릿에 다국어 데이터 전송 중...</span>
                     <span>{uploadProgress}%</span>
                   </div>
                   <div style={{ width: '100%', height: '8px', backgroundColor: '#E2E8F0', borderRadius: '4px', overflow: 'hidden' }}>
@@ -522,7 +674,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
               )}
 
               {/* Single Apply Button */}
-              <div style={{ marginTop: '20px' }}>
+              <div style={{ marginTop: '16px' }}>
                 <button
                   onClick={handleApplyToTablet}
                   disabled={!hasChanges || isUploading}
@@ -552,31 +704,31 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                   ) : (
                     <>
                       <Sparkles size={18} />
-                      <span>태블릿에 적용</span>
+                      <span>다국어(한·영·일) 태블릿에 적용</span>
                     </>
                   )}
                 </button>
               </div>
             </section>
 
-            {/* 3. Current Active Image Metadata Card */}
+            {/* 3. Current Active Images Status */}
             <section style={{
               backgroundColor: '#FFFFFF',
               borderRadius: '16px',
               border: '1px solid #E2E8F0',
-              padding: '20px 24px',
+              padding: '18px 22px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-                  현재 배포 중인 정보
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                  현재 배포 중인 다국어 버전 정보
                 </h3>
                 <span style={{
-                  fontSize: '12px',
+                  fontSize: '11px',
                   fontWeight: 700,
                   backgroundColor: '#ECFDF5',
                   color: '#059669',
-                  padding: '3px 8px',
+                  padding: '2px 7px',
                   borderRadius: '6px',
                   border: '1px solid #A7F3D0'
                 }}>
@@ -584,18 +736,14 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                 </span>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: '#475569' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: '#475569' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748B' }}>파일명:</span>
-                  <span style={{ fontWeight: 600, color: '#0F172A' }}>{activePopup.fileName}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748B' }}>파일 용량:</span>
-                  <span style={{ fontWeight: 600 }}>{formatFileSize(activePopup.fileSize)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748B' }}>마지막 적용:</span>
+                  <span style={{ color: '#64748B' }}>마지막 업데이트:</span>
                   <span style={{ fontWeight: 600 }}>{formatDate(activePopup.updatedAt)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748B' }}>등록된 언어:</span>
+                  <span style={{ fontWeight: 700, color: '#E11D48' }}>🇰🇷 한국어 · 🇺🇸 English · 🇯🇵 日本語</span>
                 </div>
               </div>
             </section>
@@ -606,12 +754,11 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
           {/* ==================================================== */}
           <div>
             <TabletPreviewViewer
-              currentImageUrl={activePopup.imageUrl}
-              selectedImageUrl={previewUrl}
-              selectedFileName={selectedFile?.name}
+              currentImages={currentActiveImages}
+              selectedImages={previewUrls}
               activeSource={previewSource}
               onSourceChange={setPreviewSource}
-              bubbleText={bubbleText}
+              bubbleTexts={bubbleTexts}
             />
           </div>
         </div>

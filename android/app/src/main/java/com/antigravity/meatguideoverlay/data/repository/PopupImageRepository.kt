@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 /**
- * Repository orchestrating local caching and remote real-time updates for the single active popup image.
+ * Repository orchestrating local caching and remote real-time updates for multi-language active popup images.
  */
 class PopupImageRepository(
     private val localDataSource: LocalPopupDataSource,
@@ -50,7 +50,7 @@ class PopupImageRepository(
     private fun initializeRepository() {
         externalScope.launch {
             // 1. Ensure local fallback image is ready
-            val initialImageFile = localDataSource.ensureLocalImageAvailable()
+            val initialImageFile = localDataSource.ensureLocalImageAvailable("ko")
             _imageFileState.value = initialImageFile
 
             // 2. Load local metadata
@@ -70,10 +70,12 @@ class PopupImageRepository(
 
                 val currentInfo = _activePopupState.value
                 if (remoteInfo.version > currentInfo.version) {
-                    Log.d(TAG, "New remote image detected (v${remoteInfo.version}). Starting download...")
-                    downloadAndApplyRemoteImage(remoteInfo)
-                } else if (remoteInfo.bubbleText != currentInfo.bubbleText) {
-                    // Update bubble text if changed
+                    Log.d(TAG, "New remote image detected (v${remoteInfo.version}). Starting multi-language downloads...")
+                    downloadAndApplyRemoteImages(remoteInfo)
+                } else if (remoteInfo.bubbleText != currentInfo.bubbleText ||
+                    remoteInfo.bubbleTextKo != currentInfo.bubbleTextKo ||
+                    remoteInfo.bubbleTextEn != currentInfo.bubbleTextEn ||
+                    remoteInfo.bubbleTextJa != currentInfo.bubbleTextJa) {
                     localDataSource.saveActivePopupInfo(remoteInfo)
                     _activePopupState.value = remoteInfo
                 }
@@ -81,40 +83,63 @@ class PopupImageRepository(
         }
     }
 
-    private suspend fun downloadAndApplyRemoteImage(remoteInfo: ActivePopupInfo) {
-        if (remoteInfo.imageUrl.isBlank() || remoteInfo.imageUrl.startsWith("assets/")) {
-            localDataSource.saveActivePopupInfo(remoteInfo)
-            _activePopupState.value = remoteInfo
-            return
+    private suspend fun downloadAndApplyRemoteImages(remoteInfo: ActivePopupInfo) {
+        // Download KO
+        val koUrl = remoteInfo.getEffectiveKoreanUrl()
+        if (koUrl.isNotBlank() && !koUrl.startsWith("assets/")) {
+            try {
+                val stream = firebaseDataSource.downloadImageStream(koUrl)
+                if (stream != null) {
+                    localDataSource.saveDownloadedImage(stream, "ko")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed downloading KO image: ${e.message}")
+            }
         }
 
-        try {
-            val stream = firebaseDataSource.downloadImageStream(remoteInfo.imageUrl)
-            if (stream != null) {
-                val saved = localDataSource.saveDownloadedImage(stream)
-                if (saved) {
-                    localDataSource.saveActivePopupInfo(remoteInfo)
-                    _activePopupState.value = remoteInfo
-                    _imageFileState.value = localDataSource.cachedImageFile
-                    Log.d(TAG, "Successfully downloaded and applied remote popup image v${remoteInfo.version}")
-                } else {
-                    Log.w(TAG, "Failed verifying downloaded image. Keeping previous cache.")
+        // Download EN
+        if (remoteInfo.imageUrlEn.isNotBlank() && !remoteInfo.imageUrlEn.startsWith("assets/")) {
+            try {
+                val stream = firebaseDataSource.downloadImageStream(remoteInfo.imageUrlEn)
+                if (stream != null) {
+                    localDataSource.saveDownloadedImage(stream, "en")
                 }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed downloading EN image: ${e.message}")
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception during remote image download: ${e.message}", e)
         }
+
+        // Download JA
+        if (remoteInfo.imageUrlJa.isNotBlank() && !remoteInfo.imageUrlJa.startsWith("assets/")) {
+            try {
+                val stream = firebaseDataSource.downloadImageStream(remoteInfo.imageUrlJa)
+                if (stream != null) {
+                    localDataSource.saveDownloadedImage(stream, "ja")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed downloading JA image: ${e.message}")
+            }
+        }
+
+        localDataSource.saveActivePopupInfo(remoteInfo)
+        _activePopupState.value = remoteInfo
+        _imageFileState.value = localDataSource.getCachedImageFile("ko")
+        Log.d(TAG, "Successfully downloaded and applied remote popup images v${remoteInfo.version}")
     }
 
     suspend fun refreshSync(): Boolean {
-        val file = localDataSource.ensureLocalImageAvailable()
+        val file = localDataSource.ensureLocalImageAvailable("ko")
         _imageFileState.value = file
         val info = localDataSource.getActivePopupInfo()
         _activePopupState.value = info
         return file != null
     }
 
-    fun getCurrentImageFile(): File? {
-        return _imageFileState.value ?: localDataSource.cachedImageFile.takeIf { it.exists() }
+    fun getCurrentImageFile(lang: String = "ko"): File? {
+        val target = localDataSource.getCachedImageFile(lang)
+        if (target.exists() && target.length() > 0) return target
+        val ko = localDataSource.getCachedImageFile("ko")
+        if (ko.exists() && ko.length() > 0) return ko
+        return _imageFileState.value
     }
 }

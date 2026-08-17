@@ -183,7 +183,7 @@ class OverlayWindowController(
                 openSingleImagePopup()
             }
 
-            scheduleSpeechBubbleHide(binding)
+            startSpeechBubbleLanguageCycle()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to attach floating character: ${e.message}", e)
         }
@@ -318,6 +318,35 @@ class OverlayWindowController(
     // 2. SINGLE POPUP IMAGE MODAL VIEWER
     // ==========================================
 
+    private var bubbleRotationJob: kotlinx.coroutines.Job? = null
+    private var currentBubbleLangIndex = 0
+
+    private fun startSpeechBubbleLanguageCycle() {
+        bubbleRotationJob?.cancel()
+        bubbleRotationJob = scope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(3000L)
+                if (isPopupAttached || floatingBinding == null) continue
+
+                val popupInfo = popupImageRepository.activePopupState.value
+                currentBubbleLangIndex = (currentBubbleLangIndex + 1) % 3
+                val nextText = when (currentBubbleLangIndex) {
+                    1 -> popupInfo.bubbleTextEn.ifBlank { popupInfo.bubbleText }
+                    2 -> popupInfo.bubbleTextJa.ifBlank { popupInfo.bubbleText }
+                    else -> popupInfo.bubbleTextKo.ifBlank { popupInfo.bubbleText }
+                }
+
+                mainHandler.post {
+                    val tv = floatingBinding?.tvSpeechBubble ?: return@post
+                    tv.animate().alpha(0f).setDuration(150).withEndAction {
+                        tv.text = nextText
+                        tv.animate().alpha(1f).setDuration(150).start()
+                    }.start()
+                }
+            }
+        }
+    }
+
     fun openSingleImagePopup() {
         if (!Settings.canDrawOverlays(context)) return
         if (isPopupAttached) return
@@ -336,29 +365,48 @@ class OverlayWindowController(
         )
         popupLayoutParams = layoutParams
 
-        // Load active image bitmap
-        val imageFile = popupImageRepository.getCurrentImageFile()
-        if (imageFile != null && imageFile.exists()) {
-            try {
-                val bitmap = decodeSampledBitmapFromFile(imageFile.absolutePath, screenWidth, screenHeight)
-                if (bitmap != null) {
-                    binding.ivPopupImage.setImageBitmap(bitmap)
-                    binding.tvLoadingHint.visibility = View.GONE
-                } else {
+        fun loadPopupLanguageImage(lang: String) {
+            val activeColor = android.content.res.ColorStateList.valueOf(0xFFE11D48.toInt())
+            val inactiveColor = android.content.res.ColorStateList.valueOf(0x00000000)
+
+            binding.btnLangKo.backgroundTintList = if (lang == "ko") activeColor else inactiveColor
+            binding.btnLangKo.setTextColor(if (lang == "ko") 0xFFFFFFFF.toInt() else 0xFFCBD5E1.toInt())
+
+            binding.btnLangEn.backgroundTintList = if (lang == "en") activeColor else inactiveColor
+            binding.btnLangEn.setTextColor(if (lang == "en") 0xFFFFFFFF.toInt() else 0xFFCBD5E1.toInt())
+
+            binding.btnLangJa.backgroundTintList = if (lang == "ja") activeColor else inactiveColor
+            binding.btnLangJa.setTextColor(if (lang == "ja") 0xFFFFFFFF.toInt() else 0xFFCBD5E1.toInt())
+
+            val imageFile = popupImageRepository.getCurrentImageFile(lang)
+            if (imageFile != null && imageFile.exists()) {
+                try {
+                    val bitmap = decodeSampledBitmapFromFile(imageFile.absolutePath, screenWidth, screenHeight)
+                    if (bitmap != null) {
+                        binding.ivPopupImage.setImageBitmap(bitmap)
+                        binding.tvLoadingHint.visibility = View.GONE
+                    } else {
+                        binding.ivPopupImage.setImageResource(R.drawable.pork_guide_poster)
+                        binding.tvLoadingHint.visibility = View.GONE
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed decoding image file for $lang: ${e.message}")
                     binding.ivPopupImage.setImageResource(R.drawable.pork_guide_poster)
                     binding.tvLoadingHint.visibility = View.GONE
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed decoding image file: ${e.message}")
+            } else {
                 binding.ivPopupImage.setImageResource(R.drawable.pork_guide_poster)
                 binding.tvLoadingHint.visibility = View.GONE
             }
-        } else {
-            binding.ivPopupImage.setImageResource(R.drawable.pork_guide_poster)
-            binding.tvLoadingHint.visibility = View.GONE
+            binding.ivPopupImage.resetScaleAndPosition()
         }
 
-        binding.ivPopupImage.resetScaleAndPosition()
+        // Initially load Korean
+        loadPopupLanguageImage("ko")
+
+        binding.btnLangKo.setOnClickListener { loadPopupLanguageImage("ko") }
+        binding.btnLangEn.setOnClickListener { loadPopupLanguageImage("en") }
+        binding.btnLangJa.setOnClickListener { loadPopupLanguageImage("ja") }
 
         // STRICT SINGLE TAP TO CLOSE
         binding.ivPopupImage.setOnSingleTapListener {
@@ -386,9 +434,9 @@ class OverlayWindowController(
             // Subtle 150ms fade-in animation
             binding.root.alpha = 0f
             binding.root.animate().alpha(1f).setDuration(150).start()
-            Log.d(TAG, "Single image popup opened successfully.")
+            Log.d(TAG, "Multi-language popup opened successfully.")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed showing single image popup: ${e.message}", e)
+            Log.e(TAG, "Failed showing multi-language popup: ${e.message}", e)
         }
     }
 

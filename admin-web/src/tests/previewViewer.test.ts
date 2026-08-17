@@ -1,6 +1,18 @@
 import { describe, it, expect } from 'vitest';
 
-describe('Tablet Preview Viewer Logic Tests', () => {
+describe('Tablet Preview Viewer Multi-Language & Gesture Tests', () => {
+  it('should cycle through KO, EN, JA languages sequentially in 3-step loop', () => {
+    const cycleNext = (curr: 'ko' | 'en' | 'ja'): 'ko' | 'en' | 'ja' => {
+      if (curr === 'ko') return 'en';
+      if (curr === 'en') return 'ja';
+      return 'ko';
+    };
+
+    expect(cycleNext('ko')).toBe('en');
+    expect(cycleNext('en')).toBe('ja');
+    expect(cycleNext('ja')).toBe('ko');
+  });
+
   it('should compute correct aspect ratio padding for 16:10, 16:9, and 4:3', () => {
     const getPadding = (ratio: '16:10' | '16:9' | '4:3', isLandscape: boolean) => {
       if (ratio === '16:10') return isLandscape ? '62.5%' : '160%';
@@ -30,7 +42,7 @@ describe('Tablet Preview Viewer Logic Tests', () => {
     };
 
     expect(isStationaryTap(0, 0)).toBe(true);
-    expect(isStationaryTap(2, 3)).toBe(true); // dist = 3.6 <= 5 -> TAP
-    expect(isStationaryTap(10, 15)).toBe(false); // dist = 18 > 5 -> DRAG, do NOT close
+    expect(isStationaryTap(2, 3)).toBe(true);
+    expect(isStationaryTap(10, 15)).toBe(false);
   });
 });

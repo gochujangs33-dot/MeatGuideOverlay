@@ -17,12 +17,18 @@ const DOC_CURRENT = 'current';
 
 export const DEFAULT_ACTIVE_POPUP: ActivePopupInfo = {
   imageUrl: '/assets/pork_guide_poster.jpg',
+  imageUrlKo: '/assets/pork_guide_poster.jpg',
+  imageUrlEn: '/assets/pork_guide_poster.jpg',
+  imageUrlJa: '/assets/pork_guide_poster.jpg',
   version: 1,
   updatedAt: new Date().toISOString(),
   fileName: 'pork_guide_poster.jpg',
   fileSize: 455717,
   checksum: 'default_v1_pork_guide',
-  bubbleText: '이 고기가 어떤 부위인지 궁금하신가요?'
+  bubbleText: '이 고기가 어떤 부위인지 궁금하신가요?',
+  bubbleTextKo: '이 고기가 어떤 부위인지 궁금하신가요?',
+  bubbleTextEn: 'Wondering which cut of meat this is?',
+  bubbleTextJa: 'このお肉がどの部位か気になりますか？'
 };
 
 /**
@@ -57,6 +63,56 @@ export function validateImageFile(file: File): UploadValidationResult {
 }
 
 /**
+ * Helper to upload a single file to Firebase Storage with fallback.
+ */
+async function uploadSingleFile(
+  file: File,
+  langPrefix: string,
+  onProgress?: (progressPercent: number) => void
+): Promise<string> {
+  const timestamp = Date.now();
+  const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const storagePath = `popups/${timestamp}_${langPrefix}_${sanitizedFileName}`;
+  const storageRef = ref(storage, storagePath);
+
+  try {
+    const uploadTask = uploadBytesResumable(storageRef, file, {
+      contentType: file.type,
+      customMetadata: {
+        originalName: file.name,
+        uploadedAt: new Date().toISOString(),
+        language: langPrefix
+      }
+    });
+
+    return await new Promise<string>((resolve) => {
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+          onProgress?.(progress);
+        },
+        (error) => {
+          console.warn(`Storage upload error for ${langPrefix}, falling back to local URL:`, error);
+          resolve(URL.createObjectURL(file));
+        },
+        async () => {
+          try {
+            const url = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve(url);
+          } catch (err) {
+            resolve(URL.createObjectURL(file));
+          }
+        }
+      );
+    });
+  } catch (e) {
+    console.warn(`Firebase storage exception for ${langPrefix}, using local fallback:`, e);
+    return URL.createObjectURL(file);
+  }
+}
+
+/**
  * Fetches the currently active popup info from Firestore.
  */
 export async function fetchActivePopup(): Promise<ActivePopupInfo> {
@@ -64,7 +120,17 @@ export async function fetchActivePopup(): Promise<ActivePopupInfo> {
     const docRef = doc(firestore, COLLECTION_NAME, DOC_CURRENT);
     const snapshot = await getDoc(docRef);
     if (snapshot.exists()) {
-      return snapshot.data() as ActivePopupInfo;
+      const data = snapshot.data() as ActivePopupInfo;
+      return {
+        ...DEFAULT_ACTIVE_POPUP,
+        ...data,
+        imageUrlKo: data.imageUrlKo || data.imageUrl || DEFAULT_ACTIVE_POPUP.imageUrlKo,
+        imageUrlEn: data.imageUrlEn || data.imageUrl || DEFAULT_ACTIVE_POPUP.imageUrlEn,
+        imageUrlJa: data.imageUrlJa || data.imageUrl || DEFAULT_ACTIVE_POPUP.imageUrlJa,
+        bubbleTextKo: data.bubbleTextKo || data.bubbleText || DEFAULT_ACTIVE_POPUP.bubbleTextKo,
+        bubbleTextEn: data.bubbleTextEn || DEFAULT_ACTIVE_POPUP.bubbleTextEn,
+        bubbleTextJa: data.bubbleTextJa || DEFAULT_ACTIVE_POPUP.bubbleTextJa
+      };
     }
   } catch (error) {
     console.warn('Failed to fetch from Firestore, checking localStorage:', error);
@@ -87,7 +153,17 @@ export function subscribeToActivePopup(callback: (info: ActivePopupInfo) => void
   const docRef = doc(firestore, COLLECTION_NAME, DOC_CURRENT);
   return onSnapshot(docRef, (snapshot) => {
     if (snapshot.exists()) {
-      callback(snapshot.data() as ActivePopupInfo);
+      const data = snapshot.data() as ActivePopupInfo;
+      callback({
+        ...DEFAULT_ACTIVE_POPUP,
+        ...data,
+        imageUrlKo: data.imageUrlKo || data.imageUrl || DEFAULT_ACTIVE_POPUP.imageUrlKo,
+        imageUrlEn: data.imageUrlEn || data.imageUrl || DEFAULT_ACTIVE_POPUP.imageUrlEn,
+        imageUrlJa: data.imageUrlJa || data.imageUrl || DEFAULT_ACTIVE_POPUP.imageUrlJa,
+        bubbleTextKo: data.bubbleTextKo || data.bubbleText || DEFAULT_ACTIVE_POPUP.bubbleTextKo,
+        bubbleTextEn: data.bubbleTextEn || DEFAULT_ACTIVE_POPUP.bubbleTextEn,
+        bubbleTextJa: data.bubbleTextJa || DEFAULT_ACTIVE_POPUP.bubbleTextJa
+      });
     } else {
       callback(DEFAULT_ACTIVE_POPUP);
     }
@@ -98,79 +174,66 @@ export function subscribeToActivePopup(callback: (info: ActivePopupInfo) => void
 }
 
 /**
- * Uploads a new image file (if provided) and updates active_popup/current in Firestore with speech bubble text.
+ * Multi-Language Upload and Apply Function.
+ * Uploads any new image files (KO, EN, JA) and updates active_popup/current in Firestore.
  */
-export async function uploadAndApplyPopup(
-  file: File | null,
-  bubbleText: string,
+export async function uploadAndApplyMultiLangPopup(
+  files: { ko: File | null; en: File | null; ja: File | null },
+  bubbleTexts: { ko: string; en: string; ja: string },
   currentInfo: ActivePopupInfo,
   onProgress?: (progressPercent: number) => void
 ): Promise<ActivePopupInfo> {
-  let downloadUrl = currentInfo.imageUrl;
-  let fileName = currentInfo.fileName;
-  let fileSize = currentInfo.fileSize;
-  let checksum = currentInfo.checksum;
   const timestamp = Date.now();
+  let urlKo = currentInfo.imageUrlKo || currentInfo.imageUrl;
+  let urlEn = currentInfo.imageUrlEn || currentInfo.imageUrl;
+  let urlJa = currentInfo.imageUrlJa || currentInfo.imageUrl;
+  let mainFileName = currentInfo.fileName;
+  let totalFileSize = currentInfo.fileSize;
 
-  if (file) {
-    const validation = validateImageFile(file);
-    if (!validation.valid) {
-      throw new Error(validation.error || '유효하지 않은 이미지 파일입니다.');
+  // Validate any provided files first
+  for (const [lang, file] of Object.entries(files)) {
+    if (file) {
+      const validation = validateImageFile(file);
+      if (!validation.valid) {
+        throw new Error(`[${lang.toUpperCase()}] ${validation.error}`);
+      }
     }
+  }
 
-    const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const storagePath = `popups/${timestamp}_${sanitizedFileName}`;
-    const storageRef = ref(storage, storagePath);
+  // Upload KO image if provided
+  if (files.ko) {
+    urlKo = await uploadSingleFile(files.ko, 'ko', (p) => onProgress?.(Math.round(p * 0.33)));
+    mainFileName = files.ko.name;
+    totalFileSize = files.ko.size;
+  }
 
-    try {
-      const uploadTask = uploadBytesResumable(storageRef, file, {
-        contentType: file.type,
-        customMetadata: {
-          originalName: file.name,
-          uploadedAt: new Date().toISOString()
-        }
-      });
+  // Upload EN image if provided
+  if (files.en) {
+    urlEn = await uploadSingleFile(files.en, 'en', (p) => onProgress?.(33 + Math.round(p * 0.33)));
+    if (!files.ko) mainFileName = files.en.name;
+  }
 
-      downloadUrl = await new Promise<string>((resolve) => {
-        uploadTask.on(
-          'state_changed',
-          (snapshot) => {
-            const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-            onProgress?.(progress);
-          },
-          (error) => {
-            console.warn('Storage upload error, falling back to local object URL:', error);
-            resolve(URL.createObjectURL(file));
-          },
-          async () => {
-            try {
-              const url = await getDownloadURL(uploadTask.snapshot.ref);
-              resolve(url);
-            } catch (err) {
-              resolve(URL.createObjectURL(file));
-            }
-          }
-        );
-      });
-    } catch (e) {
-      console.warn('Firebase storage connection error, using local fallback:', e);
-      downloadUrl = URL.createObjectURL(file);
-    }
-
-    fileName = file.name;
-    fileSize = file.size;
-    checksum = `crc_${timestamp}_${file.size}`;
+  // Upload JA image if provided
+  if (files.ja) {
+    urlJa = await uploadSingleFile(files.ja, 'ja', (p) => onProgress?.(66 + Math.round(p * 0.34)));
+    if (!files.ko && !files.en) mainFileName = files.ja.name;
   }
 
   const newVersion = currentInfo.version + 1;
   const newPopupInfo: ActivePopupInfo = {
-    imageUrl: downloadUrl,
+    imageUrl: urlKo, // Base default
+    imageUrlKo: urlKo,
+    imageUrlEn: urlEn,
+    imageUrlJa: urlJa,
     version: newVersion,
     updatedAt: new Date().toISOString(),
-    fileName: fileName,
-    fileSize: fileSize,
-    checksum: checksum,
-    bubbleText: bubbleText.trim() || '이 고기가 어떤 부위인지 궁금하신가요?'
+    fileName: mainFileName,
+    fileSize: totalFileSize,
+    checksum: `crc_${timestamp}_v${newVersion}`,
+    bubbleText: bubbleTexts.ko.trim() || DEFAULT_ACTIVE_POPUP.bubbleTextKo || '이 고기가 어떤 부위인지 궁금하신가요?',
+    bubbleTextKo: bubbleTexts.ko.trim() || DEFAULT_ACTIVE_POPUP.bubbleTextKo || '이 고기가 어떤 부위인지 궁금하신가요?',
+    bubbleTextEn: bubbleTexts.en.trim() || DEFAULT_ACTIVE_POPUP.bubbleTextEn || 'Wondering which cut of meat this is?',
+    bubbleTextJa: bubbleTexts.ja.trim() || DEFAULT_ACTIVE_POPUP.bubbleTextJa || 'このお肉がどの部位か気になりますか？'
   };
 
   try {

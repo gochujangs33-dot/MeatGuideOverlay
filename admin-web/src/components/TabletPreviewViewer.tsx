@@ -6,28 +6,36 @@ import {
   CheckCircle2,
   AlertTriangle,
   X,
-  Move
+  Move,
+  Languages
 } from 'lucide-react';
+import { SupportedLanguage } from '../types/popup';
 
 interface Props {
-  currentImageUrl: string;
-  selectedImageUrl: string | null;
-  selectedFileName?: string | null;
+  currentImages: { ko: string; en: string; ja: string };
+  selectedImages: { ko: string | null; en: string | null; ja: string | null };
   activeSource: 'current' | 'selected';
   onSourceChange: (source: 'current' | 'selected') => void;
-  bubbleText?: string;
+  bubbleTexts: { ko: string; en: string; ja: string };
 }
 
 export const TabletPreviewViewer: React.FC<Props> = ({
-  currentImageUrl,
-  selectedImageUrl,
+  currentImages,
+  selectedImages,
   activeSource,
   onSourceChange,
-  bubbleText = '이 고기가 어떤 부위인지 궁금하신가요?'
+  bubbleTexts
 }) => {
   const [isLandscape, setIsLandscape] = useState<boolean>(true);
   const [aspectRatio, setAspectRatio] = useState<'16:10' | '16:9' | '4:3'>('16:10');
   const [isOpen, setIsOpen] = useState<boolean>(false);
+
+  // Popup Modal Language Tab Selection: 'ko' | 'en' | 'ja'
+  const [popupLang, setPopupLang] = useState<SupportedLanguage>('ko');
+
+  // Speech Bubble 3-Second Automatic Language Rotation
+  const [bubbleLang, setBubbleLang] = useState<SupportedLanguage>('ko');
+  const [bubbleFade, setBubbleFade] = useState<boolean>(true);
 
   // Zoom & Pan state
   const [scale, setScale] = useState<number>(1.0);
@@ -41,34 +49,57 @@ export const TabletPreviewViewer: React.FC<Props> = ({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Active displayed image URL
-  const displayedImageUrl = activeSource === 'selected' && selectedImageUrl
-    ? selectedImageUrl
-    : currentImageUrl;
-
-  // Auto-switch to 'selected' when a new file is chosen
+  // Speech bubble 3-second interval cycle: KO -> EN -> JA -> KO
   useEffect(() => {
-    if (selectedImageUrl) {
-      onSourceChange('selected');
-    }
-  }, [selectedImageUrl, onSourceChange]);
+    if (isOpen) return; // Pause rotation when popup is open
+
+    const interval = setInterval(() => {
+      setBubbleFade(false); // start fade-out
+      setTimeout(() => {
+        setBubbleLang((prev) => {
+          if (prev === 'ko') return 'en';
+          if (prev === 'en') return 'ja';
+          return 'ko';
+        });
+        setBubbleFade(true); // fade-in new text
+      }, 150);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [isOpen]);
+
+  // Current active bubble text based on rotating language
+  const currentBubbleText = bubbleTexts[bubbleLang] || bubbleTexts.ko;
+
+  // Active displayed image URL for current popupLang
+  const displayedImageUrl = activeSource === 'selected' && selectedImages[popupLang]
+    ? selectedImages[popupLang]!
+    : (currentImages[popupLang] || currentImages.ko);
 
   const handleResetPreview = useCallback(() => {
     setIsLandscape(true);
     setAspectRatio('16:10');
     setIsOpen(false);
+    setPopupLang('ko');
     setScale(1.0);
     setPosition({ x: 0, y: 0 });
   }, []);
 
   const handleOpenPopup = () => {
     setIsOpen(true);
+    setPopupLang('ko');
     setScale(1.0);
     setPosition({ x: 0, y: 0 });
   };
 
   const handleClosePopup = () => {
     setIsOpen(false);
+    setScale(1.0);
+    setPosition({ x: 0, y: 0 });
+  };
+
+  const handleSwitchPopupLanguage = (lang: SupportedLanguage) => {
+    setPopupLang(lang);
     setScale(1.0);
     setPosition({ x: 0, y: 0 });
   };
@@ -124,13 +155,12 @@ export const TabletPreviewViewer: React.FC<Props> = ({
     setIsDragging(false);
 
     const elapsed = Date.now() - dragTimeRef.current;
-    // Only close if it was an instant stationary click on backdrop and not a drag
     if (!hasMovedRef.current && elapsed < 250 && e.target === e.currentTarget) {
       handleClosePopup();
     }
   };
 
-  // Touch handlers for mobile/tablet
+  // Touch handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!isOpen) return;
 
@@ -187,6 +217,8 @@ export const TabletPreviewViewer: React.FC<Props> = ({
     }
   };
 
+  const hasAnySelected = selectedImages.ko || selectedImages.en || selectedImages.ja;
+
   // Dimensions based on orientation & aspect ratio
   const getAspectRatioPadding = () => {
     if (aspectRatio === '16:10') return isLandscape ? '62.5%' : '160%';
@@ -212,7 +244,7 @@ export const TabletPreviewViewer: React.FC<Props> = ({
             태블릿 미리보기 뷰어
           </h2>
           <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
-            캐릭터 터치 시 팝업 열기, 드래그 이동 및 핀치 줌을 시험해 볼 수 있습니다.
+            3초마다 말풍선 언어(한·영·일)가 순환하며, 팝업 상단에서 언어를 선택할 수 있습니다.
           </p>
         </div>
 
@@ -285,8 +317,8 @@ export const TabletPreviewViewer: React.FC<Props> = ({
             현재 적용 이미지
           </button>
           <button
-            onClick={() => selectedImageUrl && onSourceChange('selected')}
-            disabled={!selectedImageUrl}
+            onClick={() => hasAnySelected && onSourceChange('selected')}
+            disabled={!hasAnySelected}
             style={{
               padding: '5px 10px',
               fontSize: '12px',
@@ -294,8 +326,8 @@ export const TabletPreviewViewer: React.FC<Props> = ({
               border: 'none',
               borderRadius: '6px',
               backgroundColor: activeSource === 'selected' ? '#E11D48' : 'transparent',
-              color: activeSource === 'selected' ? '#FFFFFF' : (!selectedImageUrl ? '#94A3B8' : '#64748B'),
-              cursor: !selectedImageUrl ? 'not-allowed' : 'pointer',
+              color: activeSource === 'selected' ? '#FFFFFF' : (!hasAnySelected ? '#94A3B8' : '#64748B'),
+              cursor: !hasAnySelected ? 'not-allowed' : 'pointer',
               boxShadow: activeSource === 'selected' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
               transition: 'all 0.15s ease'
             }}
@@ -381,12 +413,12 @@ export const TabletPreviewViewer: React.FC<Props> = ({
         borderRadius: '16px',
         padding: '24px 16px',
         overflow: 'hidden',
-        minHeight: '440px'
+        minHeight: '460px'
       }}>
         {/* Tablet Outer Body */}
         <div style={{
           width: isLandscape ? '100%' : '340px',
-          maxWidth: isLandscape ? '560px' : '340px',
+          maxWidth: isLandscape ? '580px' : '340px',
           backgroundColor: '#0F172A',
           borderRadius: '24px',
           padding: '12px',
@@ -481,20 +513,40 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                     zIndex: 20
                   }}
                 >
-                  {/* Speech Bubble */}
+                  {/* Speech Bubble with 3-Second Language Cycle & Indicator Badge */}
                   <div style={{
                     backgroundColor: '#FFFFFF',
                     border: '1.5px solid #F48FB1',
                     borderRadius: '14px',
                     padding: '8px 12px',
                     boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    color: '#0F172A',
-                    maxWidth: '180px',
-                    lineHeight: 1.35
+                    maxWidth: '190px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px'
                   }}>
-                    {bubbleText}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{
+                        fontSize: '9px',
+                        fontWeight: 800,
+                        backgroundColor: '#FFF0F5',
+                        color: '#E11D48',
+                        padding: '1px 5px',
+                        borderRadius: '4px'
+                      }}>
+                        {bubbleLang === 'ko' ? '🇰🇷 한글' : bubbleLang === 'en' ? '🇺🇸 EN' : '🇯🇵 日本語'} (3초 순환)
+                      </span>
+                    </div>
+                    <div style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      color: '#0F172A',
+                      lineHeight: 1.35,
+                      opacity: bubbleFade ? 1 : 0,
+                      transition: 'opacity 0.15s ease-in-out'
+                    }}>
+                      {currentBubbleText}
+                    </div>
                   </div>
 
                   {/* Pig Mascot Character Avatar */}
@@ -541,32 +593,91 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                     overflow: 'hidden'
                   }}
                 >
-                  {/* Top Right Dedicated Close Button */}
-                  <button
-                    onClick={handleClosePopup}
-                    style={{
-                      position: 'absolute',
-                      top: '12px',
-                      right: '12px',
-                      backgroundColor: 'rgba(0, 0, 0, 0.65)',
-                      border: '1px solid rgba(255, 255, 255, 0.25)',
-                      color: '#FFFFFF',
-                      borderRadius: '20px',
-                      padding: '6px 12px',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
+                  {/* TOP HEADER BAR: Multi-Language Selector Tabs + Close Button */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '10px',
+                    left: '12px',
+                    right: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    zIndex: 40,
+                    pointerEvents: 'auto'
+                  }}>
+                    {/* Multi-Language Selector Buttons: [한국어 | English | 日本語] */}
+                    <div style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '4px',
-                      zIndex: 40,
-                      backdropFilter: 'blur(4px)',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
-                    }}
-                  >
-                    <X size={14} />
-                    <span>닫기</span>
-                  </button>
+                      backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                      backdropFilter: 'blur(8px)',
+                      padding: '4px',
+                      borderRadius: '24px',
+                      border: '1px solid rgba(255, 255, 255, 0.2)'
+                    }}>
+                      <div style={{ padding: '0 4px 0 8px', display: 'flex', alignItems: 'center' }}>
+                        <Languages size={14} color="#F48FB1" />
+                      </div>
+                      {(['ko', 'en', 'ja'] as SupportedLanguage[]).map((lang) => {
+                        const labels: Record<SupportedLanguage, string> = {
+                          ko: '한글',
+                          en: 'English',
+                          ja: '日本語'
+                        };
+                        const isActive = popupLang === lang;
+                        return (
+                          <button
+                            key={lang}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSwitchPopupLanguage(lang);
+                            }}
+                            style={{
+                              padding: '5px 11px',
+                              borderRadius: '18px',
+                              border: 'none',
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              backgroundColor: isActive ? '#E11D48' : 'transparent',
+                              color: isActive ? '#FFFFFF' : '#CBD5E1',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                              boxShadow: isActive ? '0 2px 6px rgba(225, 29, 72, 0.4)' : 'none'
+                            }}
+                          >
+                            {labels[lang]}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Top Right Dedicated Close Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleClosePopup();
+                      }}
+                      style={{
+                        backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        color: '#FFFFFF',
+                        borderRadius: '20px',
+                        padding: '6px 12px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        backdropFilter: 'blur(8px)',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
+                      }}
+                    >
+                      <X size={14} />
+                      <span>닫기</span>
+                    </button>
+                  </div>
 
                   {/* Zoomable & Pannable Image Container */}
                   <div
@@ -579,22 +690,23 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                       transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
                       transformOrigin: 'center center',
                       transition: isDragging ? 'none' : 'transform 0.1s ease-out',
-                      pointerEvents: 'none'
+                      pointerEvents: 'none',
+                      paddingTop: '36px'
                     }}
                   >
                     <img
                       src={displayedImageUrl}
-                      alt="고기 부위 안내 팝업"
+                      alt={`고기 부위 안내 팝업 (${popupLang})`}
                       style={{
                         maxWidth: '94%',
-                        maxHeight: '94%',
+                        maxHeight: '90%',
                         objectFit: 'contain',
                         display: 'block'
                       }}
                     />
                   </div>
 
-                  {/* On-screen Zoom Indicator & Drag Guide */}
+                  {/* Bottom Zoom & Drag Guide Bar */}
                   <div style={{
                     position: 'absolute',
                     bottom: '10px',
