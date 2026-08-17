@@ -616,9 +616,9 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                       }}>
                         {(['ko', 'en', 'ja'] as SupportedLanguage[]).map((lang) => {
                           const labels: Record<SupportedLanguage, string> = {
-                            ko: 'KR',
-                            en: 'EN',
-                            ja: 'JA'
+                            ko: '한글',
+                            en: 'English',
+                            ja: '日本語'
                           };
                           const isActive = popupLang === lang;
                           return (
@@ -629,20 +629,19 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                                 handleSwitchPopupLanguage(lang);
                               }}
                               style={{
-                                width: '32px',
-                                height: '26px',
-                                borderRadius: '7px',
+                                padding: '5px 8px',
+                                borderRadius: '6px',
                                 border: 'none',
                                 fontSize: '11px',
-                                fontWeight: 800,
+                                fontWeight: 700,
                                 backgroundColor: isActive ? '#E11D48' : 'transparent',
-                                color: isActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.7)',
+                                color: isActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.75)',
                                 cursor: 'pointer',
                                 transition: 'all 0.12s ease',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                padding: 0
+                                whiteSpace: 'nowrap'
                               }}
                             >
                               {labels[lang]}
