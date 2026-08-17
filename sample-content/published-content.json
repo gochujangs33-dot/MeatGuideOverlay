@@ -1,0 +1,129 @@
+{
+  "schemaVersion": "1.0.0",
+  "contentVersion": 1,
+  "updatedAt": "2026-08-17T12:00:00.000Z",
+  "publishedBy": "system_init",
+  "bubbleText": "이 고기가 어떤 부위인지 궁금하신가요?",
+  "characterImage": {
+    "url": "assets/char_mascot.png",
+    "alt": "고기 부위 안내 캐릭터",
+    "mimeType": "image/png",
+    "fileSize": 12400,
+    "version": "1.0.0"
+  },
+  "porkCategory": {
+    "title": "돼지고기 특수부위",
+    "description": "엄선된 최고급 돼지고기 특수부위의 풍미와 식감을 즐겨보세요.",
+    "items": [
+      {
+        "id": "pork_ggodle_neck",
+        "name": "꼬들목살",
+        "cutPosition": "돼지 목덜미 위쪽 살코기 부위",
+        "description": "돼지 한 마리당 약 400g만 얻을 수 있는 귀한 특수부위로, 탄력 있는 육질과 꼬들꼬들한 식감이 매력적입니다.",
+        "taste": "고소함이 짙고 씹을수록 감칠맛이 진하게 배어 나오는 맛",
+        "texture": "탱글탱글하고 꼬들꼬들하게 씹히는 독보적인 식감",
+        "recommendation": "첫 점은 구운 소금에 살짝 찍어 고유의 탄력과 육즙을 느껴보세요.",
+        "order": 1,
+        "visible": true,
+        "imageUrl": "assets/pork_ggodle.png",
+        "silhouetteUrl": "assets/pig_diagram_neck.png"
+      },
+      {
+        "id": "pork_hangjeong",
+        "name": "항정살",
+        "cutPosition": "돼지 뒷덜미 목과 어깨 사이 부위",
+        "description": "천 겹의 마블링이라 불리는 '천겹살'로, 살코기 사이에 촘촘히 박힌 마블링이 특징인 최고 인기 특수부위입니다.",
+        "taste": "담백하면서도 진한 육즙의 부드러운 고소함",
+        "texture": "아삭아삭하게 씹히면서 부드럽게 녹아내리는 결",
+        "recommendation": "생와사비나 매콤한 파채와 곁들이면 느끼함을 잡아주어 더욱 맛있습니다.",
+        "order": 2,
+        "visible": true,
+        "imageUrl": "assets/pork_hangjeong.png",
+        "silhouetteUrl": "assets/pig_diagram_hangjeong.png"
+      },
+      {
+        "id": "pork_galmaegi",
+        "name": "갈매기살",
+        "cutPosition": "돼지의 횡격막과 간 사이에 위치한 부위",
+        "description": "소고기의 안창살에 해당하는 부위로 기름기가 적고 단백질과 철분이 풍부하여 육향이 매우 뛰어납니다.",
+        "taste": "소고기를 연상시키는 짙고 깊은 육향과 담백한 풍미",
+        "texture": "쫄깃쫄깃하면서도 부드러운 살코기의 결",
+        "recommendation": "타지 않게 자주 뒤집어가며 미디엄 웰로 구운 후 특제 간장소스에 찍어 드세요.",
+        "order": 3,
+        "visible": true,
+        "imageUrl": "assets/pork_galmaegi.png",
+        "silhouetteUrl": "assets/pig_diagram_galmaegi.png"
+      },
+      {
+        "id": "pork_gabri",
+        "name": "가브리살",
+        "cutPosition": "돼지 등심 앞부분 위쪽의 덧살 부위",
+        "description": "'등심덧살'이라고도 하며, 삼겹살보다 연하고 부드러우며 항정살보다 담백한 황금 밸런스를 자랑합니다.",
+        "taste": "부드럽고 촉촉하며 자극적이지 않은 고급스러운 고소함",
+        "texture": "연하고 찰지며 씹을 때 육즙이 부드럽게 퍼지는 느낌",
+        "recommendation": "멜젓이나 볶은 소금에 찍어 본연의 담백한 풍미를 음미해 보세요.",
+        "order": 4,
+        "visible": true,
+        "imageUrl": "assets/pork_gabri.png",
+        "silhouetteUrl": "assets/pig_diagram_gabri.png"
+      },
+      {
+        "id": "pork_samgyeop",
+        "name": "삼겹살",
+        "cutPosition": "돼지의 갈비 부근에서 뒷다리 전까지의 복부 부위",
+        "description": "살코기와 지방이 층을 이루어 대한민국 국민 모두가 사랑하는 대표 부위로 고소한 풍미가 일품입니다.",
+        "taste": "지방의 고소함과 살코기의 감칠맛이 완벽히 조화된 맛",
+        "texture": "겉은 바삭하고 속은 촉촉한 겉바속촉의 정석",
+        "recommendation": "노릇하게 바싹 익혀 신선한 상추쌈, 쌈장, 구운 김치와 함께 드세요.",
+        "order": 5,
+        "visible": true,
+        "imageUrl": "assets/pork_samgyeop.png",
+        "silhouetteUrl": "assets/pig_diagram_belly.png"
+      },
+      {
+        "id": "pork_songi",
+        "name": "송이살",
+        "cutPosition": "돼지 갈비 뼈 안쪽의 소량 특수 특미 부위",
+        "description": "송이버섯처럼 결이 살아있고 한 마리에서 극소량만 나오는 특수부위로, 부드러운 감칠맛이 특징입니다.",
+        "taste": "은은한 육향과 씹을수록 퍼지는 깔끔한 고소함",
+        "texture": "부드러우면서도 결이 촉촉하게 살아있는 독특한 식감",
+        "recommendation": "소금 기름장에 가볍게 찍어 은은한 육즙과 부드러움을 즐겨보세요.",
+        "order": 6,
+        "visible": true,
+        "imageUrl": "assets/pork_songi.png",
+        "silhouetteUrl": "assets/pig_diagram_songi.png"
+      }
+    ]
+  },
+  "beefRibItem": {
+    "id": "beef_rib_single",
+    "name": "소생갈비살",
+    "cutPosition": "갈비뼈 사이의 정선된 꽃갈비살 부위",
+    "description": "갈비뼈 사이에서 정성스럽게 발라낸 최상급 생갈비살로 육즙과 마블링의 조화가 뛰어납니다.",
+    "taste": "풍부한 육즙과 진한 소고기 고유의 감칠맛",
+    "texture": "부드러우면서도 씹을수록 터져 나오는 촉촉한 육즙의 식감",
+    "characteristics": "마블링이 촘촘하여 숯불에 구웠을 때 최상의 풍미를 냅니다.",
+    "recommendation": "미디엄 웰 정도로 겉면만 노릇하게 구워 와사비나 소금과 함께 드시면 가장 맛있습니다.",
+    "imageUrl": "assets/beef_galbi.png",
+    "silhouetteUrl": "assets/cow_diagram_rib.png"
+  },
+  "kioskErrorTexts": [
+    "서버에 접속이 끊겼습니다",
+    "서버 접속 오류",
+    "네트워크 연결이 끊어졌습니다",
+    "서버와의 연결이 원활하지 않습니다"
+  ],
+  "restartGuide": {
+    "title": "키오스크 서버 연결 오류",
+    "message": "키오스크 서버 연결 오류가 발생했습니다. 태블릿의 전원을 완전히 껐다가 다시 켜 주세요.",
+    "cooldownMinutes": 5,
+    "allowPowerMenu": true
+  },
+  "uiSettings": {
+    "autoCloseSeconds": 60,
+    "speechBubbleMode": "TIMEOUT_THEN_CHAR_ONLY",
+    "speechBubbleTimeoutSeconds": 8,
+    "characterDefaultSide": "RIGHT",
+    "touchOutsideDismiss": true
+  }
+}

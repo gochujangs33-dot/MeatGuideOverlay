@@ -1,0 +1,52 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="300dp"
+    android:height="180dp"
+    android:viewportWidth="400"
+    android:viewportHeight="240">
+  <!-- Card Background -->
+  <path
+      android:fillColor="#F5F5F5"
+      android:pathData="M16,0 H384 A16,16 0 0,1 400,16 V224 A16,16 0 0,1 384,240 H16 A16,16 0 0,1 0,224 V16 A16,16 0 0,1 16,0 Z" />
+  <!-- Cow Head & Horns -->
+  <path
+      android:fillColor="#BDBDBD"
+      android:strokeColor="#757575"
+      android:strokeWidth="2"
+      android:pathData="M50,85 L25,95 L15,115 L45,135 L65,150 L65,185 L85,185 L90,145 Z" />
+  <!-- Chuck & Neck -->
+  <path
+      android:fillColor="#E0E0E0"
+      android:strokeColor="#757575"
+      android:strokeWidth="2"
+      android:pathData="M50,85 C75,70 100,65 115,65 L115,135 L65,140 Z" />
+  <!-- Ribs / Galbi (HIGHLIGHTED) -->
+  <path
+      android:fillColor="#D32F2F"
+      android:strokeColor="#B71C1C"
+      android:strokeWidth="3"
+      android:pathData="M115,65 L205,65 L205,135 L115,135 Z" />
+  <!-- Loin & Sirloin -->
+  <path
+      android:fillColor="#E0E0E0"
+      android:strokeColor="#757575"
+      android:strokeWidth="2"
+      android:pathData="M205,65 C240,65 270,70 290,80 L290,135 L205,135 Z" />
+  <!-- Flank & Plate -->
+  <path
+      android:fillColor="#EEEEEE"
+      android:strokeColor="#757575"
+      android:strokeWidth="2"
+      android:pathData="M115,135 L270,135 L260,165 L125,165 Z" />
+  <!-- Round / Hind Leg -->
+  <path
+      android:fillColor="#BDBDBD"
+      android:strokeColor="#757575"
+      android:strokeWidth="2"
+      android:pathData="M290,80 C320,95 330,120 330,150 L330,185 L310,185 L295,155 L260,165 Z" />
+  <!-- Front Leg -->
+  <path
+      android:fillColor="#BDBDBD"
+      android:strokeColor="#757575"
+      android:strokeWidth="2"
+      android:pathData="M95,155 L95,185 L115,185 L120,155 Z" />
+</vector>

@@ -1,0 +1,78 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="80dp"
+    android:height="80dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+  <!-- Glow Circle -->
+  <path
+      android:fillColor="#FFE0B2"
+      android:pathData="M100,100m-90,0a90,90 0,1 1,180 0a90,90 0,1 1,-180 0" />
+  <path
+      android:strokeColor="#FF8A65"
+      android:strokeWidth="5"
+      android:pathData="M100,100m-90,0a90,90 0,1 1,180 0a90,90 0,1 1,-180 0" />
+  <!-- Ears -->
+  <path
+      android:fillColor="#FF8DA1"
+      android:strokeColor="#E57373"
+      android:strokeWidth="2"
+      android:pathData="M50,60 L30,25 L70,45 Z" />
+  <path
+      android:fillColor="#FF8DA1"
+      android:strokeColor="#E57373"
+      android:strokeWidth="2"
+      android:pathData="M150,60 L170,25 L130,45 Z" />
+  <!-- Head -->
+  <path
+      android:fillColor="#FFB6C1"
+      android:strokeColor="#E57373"
+      android:strokeWidth="3"
+      android:pathData="M100,60 C135,60 165,85 165,115 C165,145 135,170 100,170 C65,170 35,145 35,115 C35,85 65,60 100,60 Z" />
+  <!-- Cheeks -->
+  <path
+      android:fillColor="#FF80AB"
+      android:pathData="M58,125m-14,0a14,14 0,1 1,28 0a14,14 0,1 1,-28 0" />
+  <path
+      android:fillColor="#FF80AB"
+      android:pathData="M142,125m-14,0a14,14 0,1 1,28 0a14,14 0,1 1,-28 0" />
+  <!-- Eyes -->
+  <path
+      android:fillColor="#2C3437"
+      android:pathData="M72,102m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" />
+  <path
+      android:fillColor="#FFFFFF"
+      android:pathData="M75,99m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+  <path
+      android:fillColor="#2C3437"
+      android:pathData="M128,102m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" />
+  <path
+      android:fillColor="#FFFFFF"
+      android:pathData="M131,99m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+  <!-- Snout -->
+  <path
+      android:fillColor="#FFCDD2"
+      android:strokeColor="#E57373"
+      android:strokeWidth="3"
+      android:pathData="M100,104 C115,104 126,112 126,122 C126,132 115,140 100,140 C85,140 74,132 74,122 C74,112 85,104 100,104 Z" />
+  <path
+      android:fillColor="#D81B60"
+      android:pathData="M91,122m-4,0a4,6 0,1 1,8 0a4,6 0,1 1,-8 0" />
+  <path
+      android:fillColor="#D81B60"
+      android:pathData="M109,122m-4,0a4,6 0,1 1,8 0a4,6 0,1 1,-8 0" />
+  <!-- Smile -->
+  <path
+      android:strokeColor="#2C3437"
+      android:strokeWidth="3"
+      android:strokeLineCap="round"
+      android:pathData="M85,145 Q100,157 115,145" />
+  <!-- Chef Hat -->
+  <path
+      android:fillColor="#FFFFFF"
+      android:strokeColor="#B0BEC5"
+      android:strokeWidth="2"
+      android:pathData="M68,55 C65,30 85,15 100,18 C115,15 135,30 132,55 Z" />
+  <path
+      android:fillColor="#E53935"
+      android:pathData="M68,48 h64 v12 h-64 z" />
+</vector>

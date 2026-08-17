@@ -1,0 +1,46 @@
+# Build outputs
+dist/
+build/
+bin/
+*/build/
+.gradle/
+*/.gradle/
+
+# Android Studio & IntelliJ
+*.iml
+.idea/
+.gradle/
+local.properties
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Node & Frontend
+node_modules/
+admin-web/dist/
+admin-web/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Security & Private Credentials
+local-signing/
+*.keystore
+*.jks
+*.p12
+*.pem
+google-services.json
+!google-services.json.example
+firebase-admin-key.json
+!firebase-admin-key.json.example
+keystore.properties
+!keystore.properties.example
+.env
+.env.local
+.env.*.local
+!*.example
+
+# OS generated
+.DS_Store
+Thumbs.db

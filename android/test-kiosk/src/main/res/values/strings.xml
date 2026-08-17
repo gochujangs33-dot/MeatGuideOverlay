@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">가상 키오스크 (테스트용)</string>
+    <string name="kiosk_title">황금 숯불 구이 전문점</string>
+    <string name="table_number">테이블 03</string>
+    <string name="btn_order_now">주문하기 (총 0원)</string>
+</resources>

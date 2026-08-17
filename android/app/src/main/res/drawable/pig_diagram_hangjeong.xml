@@ -1,0 +1,52 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="300dp"
+    android:height="180dp"
+    android:viewportWidth="400"
+    android:viewportHeight="240">
+  <!-- Card Background -->
+  <path
+      android:fillColor="#F5F5F5"
+      android:pathData="M16,0 H384 A16,16 0 0,1 400,16 V224 A16,16 0 0,1 384,240 H16 A16,16 0 0,1 0,224 V16 A16,16 0 0,1 16,0 Z" />
+  <!-- Base Silhouette -->
+  <path
+      android:fillColor="#BDBDBD"
+      android:strokeColor="#757575"
+      android:strokeWidth="2"
+      android:pathData="M60,110 L20,115 L20,135 L50,145 L70,165 L70,185 L90,185 L95,155 L100,165 L100,185 L120,185 L125,165 L240,165 L240,185 L260,185 L270,155 L290,155 L300,185 L320,185 L320,120 C310,90 280,70 240,65 C210,60 160,60 120,65 C105,65 80,70 60,90 Z" />
+  <!-- Neck (Ggodle) -->
+  <path
+      android:fillColor="#E0E0E0"
+      android:strokeColor="#616161"
+      android:strokeWidth="2"
+      android:pathData="M60,90 C80,70 105,65 120,65 L120,105 L75,115 Z" />
+  <!-- Hangjeong (Jowl) -->
+  <path
+      android:fillColor="#D32F2F"
+      android:strokeColor="#616161"
+      android:strokeWidth="2"
+      android:pathData="M50,135 L85,135 L95,155 L70,165 Z" />
+  <!-- Gabri (Upper Loin) -->
+  <path
+      android:fillColor="#E0E0E0"
+      android:strokeColor="#616161"
+      android:strokeWidth="2"
+      android:pathData="M120,65 C160,60 210,60 240,65 L240,100 L120,100 Z" />
+  <!-- Galmaegi (Diaphragm) -->
+  <path
+      android:fillColor="#E0E0E0"
+      android:strokeColor="#616161"
+      android:strokeWidth="2"
+      android:pathData="M130,100 L230,100 L230,125 L130,125 Z" />
+  <!-- Samgyeop (Belly) -->
+  <path
+      android:fillColor="#E0E0E0"
+      android:strokeColor="#616161"
+      android:strokeWidth="2"
+      android:pathData="M120,125 L240,125 L240,165 L120,165 Z" />
+  <!-- Songi (Inner Rib) -->
+  <path
+      android:fillColor="#E0E0E0"
+      android:strokeColor="#FFFFFF"
+      android:strokeWidth="2"
+      android:pathData="M180,112m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0" />
+</vector>

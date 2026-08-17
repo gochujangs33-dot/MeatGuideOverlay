@@ -1,0 +1,31 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+  <path
+      android:fillColor="#D32F2F"
+      android:pathData="M20,25 C45,10 80,15 88,40 C95,65 80,85 55,90 C25,95 10,75 12,50 C14,35 15,28 20,25 Z" />
+  <!-- Marbling Streaks -->
+  <path
+      android:strokeColor="#FFFFFF"
+      android:strokeWidth="4"
+      android:strokeLineCap="round"
+      android:pathData="M30,30 Q50,40 75,32" />
+  <path
+      android:strokeColor="#FFFFFF"
+      android:strokeWidth="3.5"
+      android:strokeLineCap="round"
+      android:pathData="M25,50 Q55,60 78,50" />
+  <path
+      android:strokeColor="#FFFFFF"
+      android:strokeWidth="3"
+      android:strokeLineCap="round"
+      android:pathData="M35,70 Q60,78 72,68" />
+  <!-- Bone -->
+  <path
+      android:fillColor="#ECEFF1"
+      android:strokeColor="#B0BEC5"
+      android:strokeWidth="1.5"
+      android:pathData="M14,42 C10,38 10,30 15,26 C20,22 26,26 28,30 L22,46 Z" />
+</vector>

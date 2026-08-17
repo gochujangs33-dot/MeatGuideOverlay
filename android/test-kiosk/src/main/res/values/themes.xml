@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.TestKiosk" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/kiosk_primary</item>
+        <item name="android:statusBarColor">@color/kiosk_bg</item>
+        <item name="android:navigationBarColor">@color/kiosk_bg</item>
+    </style>
+</resources>

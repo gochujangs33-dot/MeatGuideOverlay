@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 250" width="400" height="250">
+    <rect width="400" height="250" rx="16" fill="#F8F9FA" stroke="#E9ECEF" stroke-width="2"/>
+    <g transform="translate(20, 20)">
+      <!-- Pig Outline Background -->
+      <!-- Head & Snout -->
+      <path d="M 60,110 L 20,115 L 20,135 L 50,145 L 70,165 L 70,185 L 90,185 L 95,155" fill="#BDBDBD" stroke="#757575" stroke-width="2"/>
+      
+      <!-- Jowl / Hangjeong -->
+      <path d="M 50,135 L 85,135 L 95,155 L 70,165 Z" fill="#E0E0E0" stroke="#424242" stroke-width="2"/>
+      
+      <!-- Neck / Ggodle -->
+      <path d="M 60,90 C 80,70 105,65 120,65 L 120,105 L 75,115 Z" fill="#E0E0E0" stroke="#424242" stroke-width="2"/>
+      
+      <!-- Upper Loin / Gabri -->
+      <path d="M 120,65 C 160,60 210,60 240,65 L 240,100 L 120,100 Z" fill="#E0E0E0" stroke="#424242" stroke-width="2"/>
+      
+      <!-- Belly / Samgyeop -->
+      <path d="M 120,125 L 240,125 L 240,165 L 120,165 Z" fill="#E0E0E0" stroke="#424242" stroke-width="2"/>
+      
+      <!-- Diaphragm / Galmaegi & Songi -->
+      <path d="M 130,100 L 230,100 L 230,125 L 130,125 Z" fill="#E0E0E0" stroke="#424242" stroke-width="2"/>
+      
+      <!-- Inner Special / Songi Cut Marker -->
+      <circle cx="180" cy="112" r="14" fill="#FF1744" stroke="#FFFFFF" stroke-width="2"/>
+      
+      <!-- Hind & Legs -->
+      <path d="M 240,65 C 280,70 310,90 320,120 L 320,185 L 300,185 L 290,155 L 240,165 Z" fill="#BDBDBD" stroke="#757575" stroke-width="2"/>
+      <path d="M 320,115 C 335,110 340,100 335,95" fill="none" stroke="#757575" stroke-width="3" stroke-linecap="round"/>
+      
+      <!-- Front Leg -->
+      <path d="M 100,165 L 100,185 L 120,185 L 125,165 Z" fill="#BDBDBD" stroke="#757575" stroke-width="2"/>
+      
+      <!-- Label -->
+      <rect x="10" y="5" width="140" height="26" rx="6" fill="#212529" opacity="0.85"/>
+      <text x="80" y="22" fill="#FFFFFF" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">돼지 부위 안내도</text>
+    </g>
+  </svg>

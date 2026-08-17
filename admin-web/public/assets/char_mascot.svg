@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFF3E0" />
+      <stop offset="100%" stop-color="#FFE0B2" />
+    </radialGradient>
+    <linearGradient id="pigPink" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFB6C1" />
+      <stop offset="100%" stop-color="#FF8DA1" />
+    </linearGradient>
+    <linearGradient id="hatGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#ECEFF1" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+  
+  <!-- Outer Glow Circle -->
+  <circle cx="100" cy="100" r="92" fill="url(#bgGlow)" stroke="#FF8A65" stroke-width="4" filter="url(#shadow)"/>
+  
+  <!-- Ears -->
+  <polygon points="50,60 30,25 70,45" fill="#FF8DA1" stroke="#E57373" stroke-width="2" />
+  <polygon points="48,55 36,32 62,47" fill="#FFCDD2" />
+  <polygon points="150,60 170,25 130,45" fill="#FF8DA1" stroke="#E57373" stroke-width="2" />
+  <polygon points="152,55 164,32 138,47" fill="#FFCDD2" />
+
+  <!-- Head -->
+  <ellipse cx="100" cy="115" rx="65" ry="55" fill="url(#pigPink)" stroke="#E57373" stroke-width="3"/>
+  
+  <!-- Cheeks -->
+  <circle cx="58" cy="125" r="14" fill="#FF5252" opacity="0.3"/>
+  <circle cx="142" cy="125" r="14" fill="#FF5252" opacity="0.3"/>
+  
+  <!-- Eyes -->
+  <circle cx="72" cy="102" r="8" fill="#2C3437"/>
+  <circle cx="75" cy="99" r="3" fill="#FFFFFF"/>
+  <circle cx="128" cy="102" r="8" fill="#2C3437"/>
+  <circle cx="131" cy="99" r="3" fill="#FFFFFF"/>
+  
+  <!-- Snout -->
+  <ellipse cx="100" cy="122" rx="26" ry="18" fill="#FFCDD2" stroke="#E57373" stroke-width="3"/>
+  <ellipse cx="91" cy="122" rx="5" ry="7" fill="#D81B60"/>
+  <ellipse cx="109" cy="122" rx="5" ry="7" fill="#D81B60"/>
+  
+  <!-- Smile -->
+  <path d="M 85 142 Q 100 154 115 142" fill="none" stroke="#2C3437" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Chef Hat -->
+  <path d="M 68 55 C 65 30, 85 15, 100 18 C 115 15, 135 30, 132 55 Z" fill="url(#hatGrad)" stroke="#B0BEC5" stroke-width="2"/>
+  <path d="M 60 48 C 50 35, 75 25, 85 35 Z" fill="url(#hatGrad)"/>
+  <path d="M 140 48 C 150 35, 125 25, 115 35 Z" fill="url(#hatGrad)"/>
+  <rect x="68" y="48" width="64" height="14" rx="4" fill="#E53935" stroke="#C62828" stroke-width="1.5"/>
+  <text x="100" y="58" font-size="8" font-family="sans-serif" font-weight="bold" fill="#FFFFFF" text-anchor="middle">MEAT GUIDE</text>
+</svg>

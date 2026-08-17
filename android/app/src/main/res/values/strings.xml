@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Name (Easily configurable string resource) -->
+    <string name="app_name">고기 부위 안내</string>
+    <string name="app_code_name">MeatGuideOverlay</string>
+
+    <!-- Foreground Notification -->
+    <string name="notification_channel_name">고기 부위 안내 상시 서비스</string>
+    <string name="notification_channel_desc">화면 위 캐릭터 표시 및 오류 감지 상태를 유지합니다.</string>
+    <string name="notification_title">고기 부위 안내가 실행 중입니다.</string>
+    <string name="notification_desc">캐릭터를 탭하여 고기 설명을 확인하세요.</string>
+
+    <!-- Main Overlay Categories -->
+    <string name="category_pork_title">돼지고기 특수부위</string>
+    <string name="category_pork_desc">꼬들목살, 항정살, 갈매기살 등 6종 특수부위 안내</string>
+    <string name="category_beef_title">소생갈비살</string>
+    <string name="category_beef_desc">최상급 꽃갈비살 부위 특징 및 추천 굽기 안내</string>
+
+    <!-- Overlay Dialog Details -->
+    <string name="dialog_title_guide">고기 부위 가이드</string>
+    <string name="dialog_close">닫기</string>
+    <string name="dialog_back">이전</string>
+    <string name="default_speech_bubble">이 고기가 어떤 부위인지 궁금하신가요?</string>
+
+    <!-- Detail Attributes -->
+    <string name="label_cut_position">부위 위치</string>
+    <string name="label_description">부위 설명</string>
+    <string name="label_taste">맛과 풍미</string>
+    <string name="label_texture">식감</string>
+    <string name="label_characteristics">특징</string>
+    <string name="label_recommendation">맛있게 즐기는 법</string>
+
+    <!-- Error Dialog -->
+    <string name="error_dialog_title">키오스크 서버 연결 오류</string>
+    <string name="error_dialog_default_message">키오스크 서버 연결 오류가 발생했습니다. 태블릿의 전원을 완전히 껐다가 다시 켜 주세요.</string>
+    <string name="error_dialog_btn_confirm">확인 (닫기)</string>
+    <string name="error_dialog_btn_power_menu">전원 메뉴 열기</string>
+
+    <!-- Staff Dashboard & Setup Wizard -->
+    <string name="wizard_title">고기 부위 안내 최초 설정</string>
+    <string name="dashboard_title">고기 부위 안내 - 직원용 관리 대시보드</string>
+    <string name="btn_save">저장</string>
+    <string name="btn_next">다음</string>
+    <string name="btn_prev">이전</string>
+    <string name="btn_complete">설정 완료 및 시작</string>
+    <string name="btn_sync_now">수동 콘텐츠 동기화</string>
+    <string name="btn_show_character">캐릭터 화면에 다시 표시</string>
+    <string name="btn_test_error_dialog">테스트 오류창 띄우기</string>
+    <string name="btn_check_update">앱 버전 확인</string>
+
+    <!-- Status Strings -->
+    <string name="status_granted">정상 활성화됨</string>
+    <string name="status_not_granted">비활성화 (권한 필요)</string>
+    <string name="status_connected">정상 연결됨</string>
+    <string name="status_disconnected">오프라인 (캐시 데이터 사용 중)</string>
+</resources>
