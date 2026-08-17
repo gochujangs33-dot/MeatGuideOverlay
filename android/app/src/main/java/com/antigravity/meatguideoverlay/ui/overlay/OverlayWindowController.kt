@@ -370,6 +370,10 @@ class OverlayWindowController(
             closeSingleImagePopup()
         }
 
+        binding.btnClosePopup.setOnClickListener {
+            closeSingleImagePopup()
+        }
+
         try {
             windowManager.addView(binding.root, layoutParams)
             isPopupAttached = true

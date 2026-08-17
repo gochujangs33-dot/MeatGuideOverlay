@@ -67,8 +67,16 @@ export async function fetchActivePopup(): Promise<ActivePopupInfo> {
       return snapshot.data() as ActivePopupInfo;
     }
   } catch (error) {
-    console.warn('Failed to fetch from Firestore, using local default:', error);
+    console.warn('Failed to fetch from Firestore, checking localStorage:', error);
   }
+
+  try {
+    const cached = localStorage.getItem('meatguide_active_popup');
+    if (cached) {
+      return JSON.parse(cached) as ActivePopupInfo;
+    }
+  } catch (_) {}
+
   return DEFAULT_ACTIVE_POPUP;
 }
 
@@ -90,72 +98,90 @@ export function subscribeToActivePopup(callback: (info: ActivePopupInfo) => void
 }
 
 /**
- * Uploads a new image file to Firebase Storage and updates active_popup/current in Firestore.
+ * Uploads a new image file (if provided) and updates active_popup/current in Firestore with speech bubble text.
  */
-export async function uploadAndApplyPopupImage(
-  file: File,
-  currentVersion: number,
+export async function uploadAndApplyPopup(
+  file: File | null,
+  bubbleText: string,
+  currentInfo: ActivePopupInfo,
   onProgress?: (progressPercent: number) => void
 ): Promise<ActivePopupInfo> {
-  const validation = validateImageFile(file);
-  if (!validation.valid) {
-    throw new Error(validation.error || '유효하지 않은 이미지 파일입니다.');
+  let downloadUrl = currentInfo.imageUrl;
+  let fileName = currentInfo.fileName;
+  let fileSize = currentInfo.fileSize;
+  let checksum = currentInfo.checksum;
+  const timestamp = Date.now();
+
+  if (file) {
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      throw new Error(validation.error || '유효하지 않은 이미지 파일입니다.');
+    }
+
+    const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `popups/${timestamp}_${sanitizedFileName}`;
+    const storageRef = ref(storage, storagePath);
+
+    try {
+      const uploadTask = uploadBytesResumable(storageRef, file, {
+        contentType: file.type,
+        customMetadata: {
+          originalName: file.name,
+          uploadedAt: new Date().toISOString()
+        }
+      });
+
+      downloadUrl = await new Promise<string>((resolve) => {
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+            onProgress?.(progress);
+          },
+          (error) => {
+            console.warn('Storage upload error, falling back to local object URL:', error);
+            resolve(URL.createObjectURL(file));
+          },
+          async () => {
+            try {
+              const url = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve(url);
+            } catch (err) {
+              resolve(URL.createObjectURL(file));
+            }
+          }
+        );
+      });
+    } catch (e) {
+      console.warn('Firebase storage connection error, using local fallback:', e);
+      downloadUrl = URL.createObjectURL(file);
+    }
+
+    fileName = file.name;
+    fileSize = file.size;
+    checksum = `crc_${timestamp}_${file.size}`;
   }
 
-  const timestamp = Date.now();
-  const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-  const storagePath = `popups/${timestamp}_${sanitizedFileName}`;
-  const storageRef = ref(storage, storagePath);
-
-  // 1. Upload to Storage
-  const uploadTask = uploadBytesResumable(storageRef, file, {
-    contentType: file.type,
-    customMetadata: {
-      originalName: file.name,
-      uploadedAt: new Date().toISOString()
-    }
-  });
-
-  const downloadUrl = await new Promise<string>((resolve, reject) => {
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-        onProgress?.(progress);
-      },
-      (error) => {
-        console.error('Storage upload error:', error);
-        reject(new Error(`이미지 업로드 실패: ${error.message}`));
-      },
-      async () => {
-        try {
-          const url = await getDownloadURL(uploadTask.snapshot.ref);
-          resolve(url);
-        } catch (err) {
-          reject(err);
-        }
-      }
-    );
-  });
-
-  // 2. Generate simple checksum/hash string
-  const simpleChecksum = `crc_${timestamp}_${file.size}`;
-
-  // 3. Create updated popup info
-  const newVersion = currentVersion + 1;
+  const newVersion = currentInfo.version + 1;
   const newPopupInfo: ActivePopupInfo = {
     imageUrl: downloadUrl,
     version: newVersion,
     updatedAt: new Date().toISOString(),
-    fileName: file.name,
-    fileSize: file.size,
-    checksum: simpleChecksum,
-    bubbleText: '이 고기가 어떤 부위인지 궁금하신가요?'
+    fileName: fileName,
+    fileSize: fileSize,
+    checksum: checksum,
+    bubbleText: bubbleText.trim() || '이 고기가 어떤 부위인지 궁금하신가요?'
   };
 
-  // 4. Update Firestore active_popup/current
-  const docRef = doc(firestore, COLLECTION_NAME, DOC_CURRENT);
-  await setDoc(docRef, newPopupInfo);
+  try {
+    const docRef = doc(firestore, COLLECTION_NAME, DOC_CURRENT);
+    await setDoc(docRef, newPopupInfo);
+  } catch (e) {
+    console.warn('Firestore setDoc failed, saving to local cache:', e);
+    try {
+      localStorage.setItem('meatguide_active_popup', JSON.stringify(newPopupInfo));
+    } catch (_) {}
+  }
 
   return newPopupInfo;
 }

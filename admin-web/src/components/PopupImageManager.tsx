@@ -8,13 +8,14 @@ import {
   RefreshCw,
   Sparkles,
   LogOut,
-  Info
+  Info,
+  MessageSquare
 } from 'lucide-react';
 import { ActivePopupInfo } from '../types/popup';
 import {
   fetchActivePopup,
   subscribeToActivePopup,
-  uploadAndApplyPopupImage,
+  uploadAndApplyPopup,
   validateImageFile,
   DEFAULT_ACTIVE_POPUP
 } from '../services/popupService';
@@ -30,6 +31,9 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  // Editable Speech Bubble Text
+  const [bubbleText, setBubbleText] = useState<string>(DEFAULT_ACTIVE_POPUP.bubbleText || '이 고기가 어떤 부위인지 궁금하신가요?');
+
   // Active source toggle for the preview viewer: 'current' vs 'selected'
   const [previewSource, setPreviewSource] = useState<'current' | 'selected'>('current');
 
@@ -43,10 +47,18 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
 
   // Subscribe to real-time updates of active popup
   useEffect(() => {
-    fetchActivePopup().then(setActivePopup).catch(console.error);
+    fetchActivePopup().then((info) => {
+      setActivePopup(info);
+      if (info.bubbleText) {
+        setBubbleText(info.bubbleText);
+      }
+    }).catch(console.error);
 
     const unsubscribe = subscribeToActivePopup((info) => {
       setActivePopup(info);
+      if (info.bubbleText) {
+        setBubbleText(info.bubbleText);
+      }
     });
 
     return () => unsubscribe();
@@ -109,8 +121,10 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
     }
   };
 
+  const hasChanges = selectedFile !== null || (bubbleText.trim() !== (activePopup.bubbleText || '').trim());
+
   const handleApplyToTablet = async () => {
-    if (!selectedFile) return;
+    if (!hasChanges && !selectedFile) return;
 
     setIsUploading(true);
     setUploadProgress(0);
@@ -118,9 +132,10 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
     setSuccessMessage(null);
 
     try {
-      const updated = await uploadAndApplyPopupImage(
+      const updated = await uploadAndApplyPopup(
         selectedFile,
-        activePopup.version,
+        bubbleText,
+        activePopup,
         (progress) => setUploadProgress(progress)
       );
 
@@ -136,7 +151,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err: any) {
       console.error('Failed to apply image:', err);
-      setErrorMessage(err.message || '이미지 적용 중 오류가 발생했습니다.');
+      setErrorMessage(err.message || '적용 중 오류가 발생했습니다.');
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -194,7 +209,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
               고기 부위 안내 이미지 관리
             </h1>
             <p style={{ fontSize: '13px', color: '#64748B', margin: '2px 0 0 0' }}>
-              태블릿에 표시할 완성된 안내 이미지를 등록하고 적용합니다.
+              태블릿에 표시할 완성된 안내 이미지와 말풍선 문구를 등록하고 적용합니다.
             </p>
           </div>
         </div>
@@ -279,7 +294,47 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
           {/* LEFT COLUMN: Image Registration & Management Area */}
           {/* ==================================================== */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* 1. New Image Registration Card */}
+            {/* 1. Speech Bubble Text Customization Card */}
+            <section style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: '16px',
+              border: '1px solid #E2E8F0',
+              padding: '20px 24px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <MessageSquare size={18} color="#E11D48" />
+                <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                  돼지 캐릭터 말풍선 문구 설정
+                </h2>
+              </div>
+              <p style={{ fontSize: '12px', color: '#64748B', margin: '0 0 12px 0' }}>
+                태블릿 키오스크 화면의 돼지 캐릭터 옆에 표시될 문구를 입력하세요. (우측 미리보기에 즉시 반영됩니다)
+              </p>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  value={bubbleText}
+                  onChange={(e) => setBubbleText(e.target.value)}
+                  placeholder="예: 이 고기가 어떤 부위인지 궁금하신가요?"
+                  style={{
+                    flex: 1,
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    border: '1.5px solid #CBD5E1',
+                    fontSize: '14px',
+                    color: '#0F172A',
+                    fontWeight: 600,
+                    outline: 'none',
+                    transition: 'border-color 0.15s ease'
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = '#E11D48')}
+                  onBlur={(e) => (e.target.style.borderColor = '#CBD5E1')}
+                />
+              </div>
+            </section>
+
+            {/* 2. New Image Registration Card */}
             <section style={{
               backgroundColor: '#FFFFFF',
               borderRadius: '16px',
@@ -289,7 +344,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-                  새 이미지 등록
+                  새 팝업 안내 이미지 등록
                 </h2>
                 {selectedFile && (
                   <span style={{
@@ -314,7 +369,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
                   style={{
-                    minHeight: '220px',
+                    minHeight: '200px',
                     border: `2px dashed ${isDragging ? '#E11D48' : '#CBD5E1'}`,
                     backgroundColor: isDragging ? '#FFF1F2' : '#FAFAFA',
                     borderRadius: '14px',
@@ -322,7 +377,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '28px 20px',
+                    padding: '24px 20px',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                     textAlign: 'center'
@@ -341,17 +396,17 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                   />
 
                   <div style={{
-                    width: '52px',
-                    height: '52px',
-                    borderRadius: '26px',
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '24px',
                     backgroundColor: '#FEE2E2',
                     color: '#E11D48',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    marginBottom: '14px'
+                    marginBottom: '12px'
                   }}>
-                    <UploadCloud size={26} />
+                    <UploadCloud size={24} />
                   </div>
 
                   <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', marginBottom: '4px' }}>
@@ -470,22 +525,22 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
               <div style={{ marginTop: '20px' }}>
                 <button
                   onClick={handleApplyToTablet}
-                  disabled={!selectedFile || isUploading}
+                  disabled={!hasChanges || isUploading}
                   style={{
                     width: '100%',
                     height: '50px',
-                    backgroundColor: !selectedFile || isUploading ? '#CBD5E1' : '#E11D48',
+                    backgroundColor: !hasChanges || isUploading ? '#CBD5E1' : '#E11D48',
                     color: '#FFFFFF',
                     border: 'none',
                     borderRadius: '12px',
                     fontSize: '15px',
                     fontWeight: 800,
-                    cursor: !selectedFile || isUploading ? 'not-allowed' : 'pointer',
+                    cursor: !hasChanges || isUploading ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    boxShadow: !selectedFile || isUploading ? 'none' : '0 4px 12px rgba(225, 29, 72, 0.25)',
+                    boxShadow: !hasChanges || isUploading ? 'none' : '0 4px 12px rgba(225, 29, 72, 0.25)',
                     transition: 'all 0.15s ease'
                   }}
                 >
@@ -504,7 +559,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
               </div>
             </section>
 
-            {/* 2. Current Active Image Metadata Card */}
+            {/* 3. Current Active Image Metadata Card */}
             <section style={{
               backgroundColor: '#FFFFFF',
               borderRadius: '16px',
@@ -556,7 +611,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
               selectedFileName={selectedFile?.name}
               activeSource={previewSource}
               onSourceChange={setPreviewSource}
-              bubbleText={activePopup.bubbleText}
+              bubbleText={bubbleText}
             />
           </div>
         </div>

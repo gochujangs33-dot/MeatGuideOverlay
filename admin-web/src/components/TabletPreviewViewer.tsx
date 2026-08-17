@@ -4,7 +4,9 @@ import {
   RefreshCw,
   Info,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  X,
+  Move
 } from 'lucide-react';
 
 interface Props {
@@ -33,6 +35,7 @@ export const TabletPreviewViewer: React.FC<Props> = ({
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const dragStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const startPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const dragTimeRef = useRef<number>(0);
   const hasMovedRef = useRef<boolean>(false);
   const touchDistanceRef = useRef<number | null>(null);
 
@@ -85,16 +88,18 @@ export const TabletPreviewViewer: React.FC<Props> = ({
     });
   };
 
-  // Mouse Down
+  // Mouse Down - start panning
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!isOpen) return;
+    e.stopPropagation();
     dragStartRef.current = { x: e.clientX, y: e.clientY };
     startPosRef.current = { ...position };
+    dragTimeRef.current = Date.now();
     hasMovedRef.current = false;
     setIsDragging(true);
   };
 
-  // Mouse Move
+  // Mouse Move - pan image freely
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isOpen || !isDragging) return;
 
@@ -102,35 +107,34 @@ export const TabletPreviewViewer: React.FC<Props> = ({
     const dy = e.clientY - dragStartRef.current.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
-    if (dist > 5) {
+    if (dist > 3) {
       hasMovedRef.current = true;
     }
 
-    if (scale > 1.0) {
-      setPosition({
-        x: startPosRef.current.x + dx,
-        y: startPosRef.current.y + dy
-      });
-    }
+    setPosition({
+      x: startPosRef.current.x + dx,
+      y: startPosRef.current.y + dy
+    });
   };
 
-  // Mouse Up
-  const handleMouseUp = () => {
+  // Mouse Up - finish panning
+  const handleMouseUp = (e: React.MouseEvent) => {
     if (!isOpen) return;
+    e.stopPropagation();
     setIsDragging(false);
 
-    // If mouse was clicked without significant dragging -> Close popup!
-    if (!hasMovedRef.current) {
+    const elapsed = Date.now() - dragTimeRef.current;
+    // Only close if it was an instant stationary click on backdrop and not a drag
+    if (!hasMovedRef.current && elapsed < 250 && e.target === e.currentTarget) {
       handleClosePopup();
     }
   };
 
-  // Touch handlers for mobile/tablet browsers
+  // Touch handlers for mobile/tablet
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!isOpen) return;
 
     if (e.touches.length === 2) {
-      // 2-finger pinch start
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       touchDistanceRef.current = Math.sqrt(dx * dx + dy * dy);
@@ -138,6 +142,7 @@ export const TabletPreviewViewer: React.FC<Props> = ({
     } else if (e.touches.length === 1) {
       dragStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       startPosRef.current = { ...position };
+      dragTimeRef.current = Date.now();
       hasMovedRef.current = false;
       setIsDragging(true);
     }
@@ -155,12 +160,12 @@ export const TabletPreviewViewer: React.FC<Props> = ({
       setScale((prev) => Math.min(Math.max(prev * factor, 1.0), 5.0));
       touchDistanceRef.current = newDist;
       hasMovedRef.current = true;
-    } else if (e.touches.length === 1 && isDragging && scale > 1.0) {
+    } else if (e.touches.length === 1 && isDragging) {
       const dx = e.touches[0].clientX - dragStartRef.current.x;
       const dy = e.touches[0].clientY - dragStartRef.current.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
-      if (dist > 6) {
+      if (dist > 4) {
         hasMovedRef.current = true;
       }
 
@@ -171,12 +176,13 @@ export const TabletPreviewViewer: React.FC<Props> = ({
     }
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
     if (!isOpen) return;
     setIsDragging(false);
     touchDistanceRef.current = null;
 
-    if (!hasMovedRef.current) {
+    const elapsed = Date.now() - dragTimeRef.current;
+    if (!hasMovedRef.current && elapsed < 250 && e.target === e.currentTarget) {
       handleClosePopup();
     }
   };
@@ -206,7 +212,7 @@ export const TabletPreviewViewer: React.FC<Props> = ({
             태블릿 미리보기 뷰어
           </h2>
           <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
-            실제 태블릿 키오스크 화면에서 표시되는 모습을 시뮬레이션합니다.
+            캐릭터 터치 시 팝업 열기, 드래그 이동 및 핀치 줌을 시험해 볼 수 있습니다.
           </p>
         </div>
 
@@ -460,7 +466,7 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Floating Mascot Character & Speech Bubble (Visible when popup is closed) */}
+              {/* Floating Pig Mascot Character & Speech Bubble (Visible when popup is closed) */}
               {!isOpen && (
                 <div
                   onClick={handleOpenPopup}
@@ -470,49 +476,44 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                     right: '12px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px',
+                    gap: '8px',
                     cursor: 'pointer',
-                    zIndex: 20,
-                    animation: 'float 3s ease-in-out infinite'
+                    zIndex: 20
                   }}
                 >
                   {/* Speech Bubble */}
                   <div style={{
                     backgroundColor: '#FFFFFF',
-                    border: '1px solid #E2E8F0',
-                    borderRadius: '12px',
-                    padding: '6px 10px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    border: '1.5px solid #F48FB1',
+                    borderRadius: '14px',
+                    padding: '8px 12px',
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
                     fontSize: '11px',
                     fontWeight: 700,
                     color: '#0F172A',
-                    maxWidth: '160px',
-                    lineHeight: 1.3
+                    maxWidth: '180px',
+                    lineHeight: 1.35
                   }}>
                     {bubbleText}
                   </div>
 
-                  {/* Character Avatar Icon */}
+                  {/* Pig Mascot Character Avatar */}
                   <div style={{
-                    width: '46px',
-                    height: '46px',
-                    borderRadius: '23px',
-                    backgroundColor: '#FFF0F5',
+                    width: '52px',
+                    height: '52px',
+                    borderRadius: '26px',
+                    backgroundColor: '#FFE0B2',
                     border: '2px solid #E11D48',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: '0 4px 12px rgba(225, 29, 72, 0.3)',
+                    boxShadow: '0 4px 14px rgba(225, 29, 72, 0.35)',
                     transition: 'transform 0.15s ease'
                   }}>
                     <img
-                      src="/assets/char_mascot.png"
-                      alt="캐릭터"
-                      style={{ width: '36px', height: '36px', objectFit: 'contain' }}
-                      onError={(e) => {
-                        // Fallback cute emoji if image missing
-                        (e.target as HTMLElement).style.display = 'none';
-                      }}
+                      src="/assets/char_mascot.svg"
+                      alt="돼지 캐릭터 마스코트"
+                      style={{ width: '42px', height: '42px', objectFit: 'contain' }}
                     />
                   </div>
                 </div>
@@ -531,16 +532,43 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                   style={{
                     position: 'absolute',
                     inset: 0,
-                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.88)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     zIndex: 30,
-                    cursor: scale > 1.0 ? (isDragging ? 'grabbing' : 'grab') : 'pointer',
+                    cursor: isDragging ? 'grabbing' : 'grab',
                     overflow: 'hidden'
                   }}
                 >
-                  {/* Zoomable Image Container */}
+                  {/* Top Right Dedicated Close Button */}
+                  <button
+                    onClick={handleClosePopup}
+                    style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
+                      color: '#FFFFFF',
+                      borderRadius: '20px',
+                      padding: '6px 12px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      zIndex: 40,
+                      backdropFilter: 'blur(4px)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
+                    }}
+                  >
+                    <X size={14} />
+                    <span>닫기</span>
+                  </button>
+
+                  {/* Zoomable & Pannable Image Container */}
                   <div
                     style={{
                       width: '100%',
@@ -558,24 +586,24 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                       src={displayedImageUrl}
                       alt="고기 부위 안내 팝업"
                       style={{
-                        maxWidth: '92%',
-                        maxHeight: '92%',
+                        maxWidth: '94%',
+                        maxHeight: '94%',
                         objectFit: 'contain',
                         display: 'block'
                       }}
                     />
                   </div>
 
-                  {/* On-screen Zoom Indicator & Click-to-Close Guide */}
+                  {/* On-screen Zoom Indicator & Drag Guide */}
                   <div style={{
                     position: 'absolute',
                     bottom: '10px',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
                     backdropFilter: 'blur(4px)',
                     color: '#FFFFFF',
-                    padding: '4px 12px',
+                    padding: '4px 14px',
                     borderRadius: '20px',
                     fontSize: '11px',
                     fontWeight: 600,
@@ -584,9 +612,12 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                     alignItems: 'center',
                     gap: '8px'
                   }}>
-                    <span>배율: {scale.toFixed(1)}x</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Move size={12} />
+                      <span>드래그로 화면 이동</span>
+                    </div>
                     <span>·</span>
-                    <span>클릭하여 닫기</span>
+                    <span>배율: {scale.toFixed(1)}x (휠로 확대)</span>
                   </div>
                 </div>
               )}

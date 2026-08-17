@@ -10,7 +10,6 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.ViewConfiguration
 import androidx.appcompat.widget.AppCompatImageView
-import kotlin.math.abs
 import kotlin.math.sqrt
 
 /**
@@ -18,8 +17,8 @@ import kotlin.math.sqrt
  *
  * Features:
  * - 1.0x to 5.0x Pinch-to-zoom (ScaleGestureDetector)
- * - Panning when zoomed in with strict boundary constraints
- * - Single-finger stationary tap detection to trigger close callback
+ * - Smooth drag panning across the screen (press and drag to move image)
+ * - Strict tap vs drag separation: dragging or holding NEVER closes the popup
  * - ZERO touch conflict: Multi-finger gestures, zoom in/out, or panning drags
  *   are NEVER misinterpreted as a close tap.
  */
@@ -32,14 +31,14 @@ class ZoomableTouchImageView @JvmOverloads constructor(
     companion object {
         private const val MIN_SCALE = 1.0f
         private const val MAX_SCALE = 5.0f
+        private const val MAX_TAP_DURATION_MS = 220L
     }
 
     private val imageMatrix = Matrix()
-    private val matrixValues = FloatArray(9)
-
     private var currentScale = 1.0f
     private var isMultiTouchDetected = false
     private var hasMovedSignificantly = false
+    private var touchDownTime = 0L
 
     private val touchSlop: Float = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
     private val startTouchPoint = PointF()
@@ -48,7 +47,6 @@ class ZoomableTouchImageView @JvmOverloads constructor(
     private var onSingleTapListener: (() -> Unit)? = null
 
     private val scaleDetector: ScaleGestureDetector
-    private val gestureDetector: GestureDetector
 
     init {
         scaleType = ScaleType.MATRIX
@@ -73,16 +71,6 @@ class ZoomableTouchImageView @JvmOverloads constructor(
                 checkMatrixBounds()
                 setImageMatrix(imageMatrix)
                 return true
-            }
-        })
-
-        gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                if (!isMultiTouchDetected && !hasMovedSignificantly) {
-                    onSingleTapListener?.invoke()
-                    return true
-                }
-                return false
             }
         })
     }
@@ -132,7 +120,6 @@ class ZoomableTouchImageView @JvmOverloads constructor(
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         scaleDetector.onTouchEvent(event)
-        gestureDetector.onTouchEvent(event)
 
         if (event.pointerCount > 1) {
             isMultiTouchDetected = true
@@ -143,6 +130,7 @@ class ZoomableTouchImageView @JvmOverloads constructor(
             MotionEvent.ACTION_DOWN -> {
                 isMultiTouchDetected = false
                 hasMovedSignificantly = false
+                touchDownTime = System.currentTimeMillis()
                 startTouchPoint.set(event.x, event.y)
                 lastTouchPoint.set(event.x, event.y)
             }
@@ -160,8 +148,8 @@ class ZoomableTouchImageView @JvmOverloads constructor(
                     hasMovedSignificantly = true
                 }
 
-                // If scaled in, allow 1-finger panning
-                if (currentScale > MIN_SCALE && event.pointerCount == 1 && !isMultiTouchDetected) {
+                // Allow 1-finger panning/dragging smoothly
+                if (event.pointerCount == 1 && !isMultiTouchDetected) {
                     imageMatrix.postTranslate(dx, dy)
                     checkMatrixBounds()
                     setImageMatrix(imageMatrix)
@@ -175,14 +163,17 @@ class ZoomableTouchImageView @JvmOverloads constructor(
                     (event.x - startTouchPoint.x) * (event.x - startTouchPoint.x) +
                             (event.y - startTouchPoint.y) * (event.y - startTouchPoint.y)
                 )
+                val duration = System.currentTimeMillis() - touchDownTime
 
-                if (!isMultiTouchDetected && !hasMovedSignificantly && totalDist <= touchSlop) {
+                // Strict tap detection: ONLY if stationary short tap without drag
+                if (!isMultiTouchDetected && !hasMovedSignificantly && totalDist <= touchSlop && duration <= MAX_TAP_DURATION_MS) {
                     onSingleTapListener?.invoke()
                 }
 
-                // If zoomed out past minimum, smoothly animate back or clamp
-                if (currentScale <= MIN_SCALE) {
-                    fitCenterImage()
+                // If scale is at default 1.0x and was dragged far out of bounds, gently re-center
+                if (currentScale <= MIN_SCALE && hasMovedSignificantly) {
+                    checkMatrixBounds()
+                    setImageMatrix(imageMatrix)
                 }
             }
 
@@ -208,7 +199,13 @@ class ZoomableTouchImageView @JvmOverloads constructor(
         var deltaY = 0f
 
         if (rect.width() <= viewWidth) {
-            deltaX = (viewWidth - rect.width()) / 2f - rect.left
+            // Keep at least part of image on screen during drag
+            val margin = viewWidth * 0.3f
+            if (rect.left > viewWidth - margin) {
+                deltaX = (viewWidth - margin) - rect.left
+            } else if (rect.right < margin) {
+                deltaX = margin - rect.right
+            }
         } else {
             if (rect.left > 0) {
                 deltaX = -rect.left
@@ -218,7 +215,12 @@ class ZoomableTouchImageView @JvmOverloads constructor(
         }
 
         if (rect.height() <= viewHeight) {
-            deltaY = (viewHeight - rect.height()) / 2f - rect.top
+            val margin = viewHeight * 0.3f
+            if (rect.top > viewHeight - margin) {
+                deltaY = (viewHeight - margin) - rect.top
+            } else if (rect.bottom < margin) {
+                deltaY = margin - rect.bottom
+            }
         } else {
             if (rect.top > 0) {
                 deltaY = -rect.top
