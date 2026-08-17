@@ -6,7 +6,6 @@ import {
   X,
   FileImage,
   RefreshCw,
-  Clock,
   Sparkles,
   LogOut,
   Info
@@ -19,6 +18,7 @@ import {
   validateImageFile,
   DEFAULT_ACTIVE_POPUP
 } from '../services/popupService';
+import { TabletPreviewViewer } from './TabletPreviewViewer';
 
 interface Props {
   onLogout: () => void;
@@ -29,6 +29,9 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
   const [activePopup, setActivePopup] = useState<ActivePopupInfo>(DEFAULT_ACTIVE_POPUP);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Active source toggle for the preview viewer: 'current' vs 'selected'
+  const [previewSource, setPreviewSource] = useState<'current' | 'selected'>('current');
 
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
@@ -53,11 +56,13 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
   useEffect(() => {
     if (!selectedFile) {
       setPreviewUrl(null);
+      setPreviewSource('current');
       return;
     }
 
     const objectUrl = URL.createObjectURL(selectedFile);
     setPreviewUrl(objectUrl);
+    setPreviewSource('selected'); // Auto-switch preview to the new file!
 
     return () => URL.revokeObjectURL(objectUrl);
   }, [selectedFile]);
@@ -98,6 +103,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
     setSelectedFile(null);
     setPreviewUrl(null);
     setErrorMessage(null);
+    setPreviewSource('current');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -121,11 +127,12 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
       setActivePopup(updated);
       setSelectedFile(null);
       setPreviewUrl(null);
+      setPreviewSource('current');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
 
-      setSuccessMessage(`새 이미지(버전 ${updated.version})가 태블릿에 성공적으로 적용되었습니다!`);
+      setSuccessMessage(`태블릿 적용이 완료되었습니다. (버전 ${updated.version})`);
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err: any) {
       console.error('Failed to apply image:', err);
@@ -166,7 +173,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
       <header style={{
         backgroundColor: '#FFFFFF',
         borderBottom: '1px solid #E2E8F0',
-        padding: '16px 24px',
+        padding: '16px 28px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -223,7 +230,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
       </header>
 
       {/* Main Container */}
-      <main style={{ maxWidth: '1040px', margin: '32px auto', padding: '0 20px' }}>
+      <main style={{ maxWidth: '1320px', margin: '28px auto', padding: '0 24px' }}>
         {/* Banner Alert Messages */}
         {successMessage && (
           <div style={{
@@ -261,315 +268,297 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px' }}>
-          {/* LEFT: Current Active Image */}
-          <section style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: '16px',
-            border: '1px solid #E2E8F0',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-                현재 적용 중인 이미지
-              </h2>
-              <span style={{
-                fontSize: '12px',
-                fontWeight: 600,
-                backgroundColor: '#ECFDF5',
-                color: '#059669',
-                padding: '4px 10px',
-                borderRadius: '9999px',
-                border: '1px solid #A7F3D0'
-              }}>
-                버전 {activePopup.version}
-              </span>
-            </div>
-
-            {/* Image Preview Container */}
-            <div style={{
-              flex: 1,
-              minHeight: '380px',
-              maxHeight: '480px',
-              backgroundColor: '#F8FAFC',
-              borderRadius: '12px',
+        {/* 2-Column Responsive Layout */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(380px, 480px) minmax(460px, 1fr)',
+          gap: '28px',
+          alignItems: 'start'
+        }}>
+          {/* ==================================================== */}
+          {/* LEFT COLUMN: Image Registration & Management Area */}
+          {/* ==================================================== */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* 1. New Image Registration Card */}
+            <section style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: '16px',
               border: '1px solid #E2E8F0',
-              overflow: 'hidden',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'relative'
+              padding: '24px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
             }}>
-              {activePopup.imageUrl ? (
-                <img
-                  src={activePopup.imageUrl}
-                  alt="현재 적용된 고기 부위 안내 이미지"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain',
-                    display: 'block'
-                  }}
-                />
-              ) : (
-                <div style={{ textAlign: 'center', color: '#94A3B8', padding: '24px' }}>
-                  <FileImage size={48} style={{ opacity: 0.4, marginBottom: '8px' }} />
-                  <p style={{ fontSize: '14px', margin: 0 }}>현재 적용된 이미지가 없습니다.</p>
-                </div>
-              )}
-            </div>
-
-            {/* Last Updated Timestamp & Metadata */}
-            <div style={{
-              marginTop: '16px',
-              paddingTop: '14px',
-              borderTop: '1px solid #F1F5F9',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              fontSize: '12px',
-              color: '#64748B'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Clock size={14} color="#94A3B8" />
-                <span>마지막 적용: {formatDate(activePopup.updatedAt)}</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                  새 이미지 등록
+                </h2>
+                {selectedFile && (
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    backgroundColor: '#FFFBEB',
+                    color: '#B45309',
+                    padding: '3px 8px',
+                    borderRadius: '6px',
+                    border: '1px solid #FDE68A'
+                  }}>
+                    미리보기 중 (미적용)
+                  </span>
+                )}
               </div>
-              <span>{activePopup.fileName} ({formatFileSize(activePopup.fileSize)})</span>
-            </div>
-          </section>
 
-          {/* RIGHT: New Image Upload & Apply */}
-          <section style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: '16px',
-            border: '1px solid #E2E8F0',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#0F172A', margin: '0 0 16px 0' }}>
-              새 이미지 등록
-            </h2>
+              {/* Drag and Drop Zone or Preview */}
+              {!selectedFile ? (
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    minHeight: '220px',
+                    border: `2px dashed ${isDragging ? '#E11D48' : '#CBD5E1'}`,
+                    backgroundColor: isDragging ? '#FFF1F2' : '#FAFAFA',
+                    borderRadius: '14px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '28px 20px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    textAlign: 'center'
+                  }}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        handleFileSelect(e.target.files[0]);
+                      }
+                    }}
+                    style={{ display: 'none' }}
+                  />
 
-            {/* Drag and Drop Zone or Preview */}
-            {!selectedFile ? (
-              <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                style={{
-                  flex: 1,
-                  minHeight: '280px',
-                  border: `2px dashed ${isDragging ? '#E11D48' : '#CBD5E1'}`,
-                  backgroundColor: isDragging ? '#FFF1F2' : '#FAFAFA',
-                  borderRadius: '14px',
+                  <div style={{
+                    width: '52px',
+                    height: '52px',
+                    borderRadius: '26px',
+                    backgroundColor: '#FEE2E2',
+                    color: '#E11D48',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '14px'
+                  }}>
+                    <UploadCloud size={26} />
+                  </div>
+
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', marginBottom: '4px' }}>
+                    이미지 파일을 끌어다 놓거나 클릭하여 선택
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '12px' }}>
+                    완성된 팝업 안내 이미지 한 장을 업로드합니다.
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {['PNG', 'JPG', 'JPEG', 'WebP'].map((fmt) => (
+                      <span
+                        key={fmt}
+                        style={{
+                          backgroundColor: '#F1F5F9',
+                          color: '#475569',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          padding: '3px 8px',
+                          borderRadius: '6px'
+                        }}
+                      >
+                        {fmt}
+                      </span>
+                    ))}
+                    <span style={{ fontSize: '11px', color: '#94A3B8', padding: '3px 4px' }}>
+                      (최대 25MB)
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                /* Selected File Summary Container */
+                <div style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '32px 20px',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  textAlign: 'center'
-                }}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files.length > 0) {
-                      handleFileSelect(e.target.files[0]);
-                    }
-                  }}
-                  style={{ display: 'none' }}
-                />
-
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '28px',
-                  backgroundColor: '#FEE2E2',
-                  color: '#E11D48',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '16px'
+                  borderRadius: '12px',
+                  border: '1px solid #E2E8F0',
+                  backgroundColor: '#FAFAFA',
+                  overflow: 'hidden'
                 }}>
-                  <UploadCloud size={28} />
-                </div>
+                  <div style={{
+                    padding: '12px 14px',
+                    backgroundColor: '#FFFFFF',
+                    borderBottom: '1px solid #E2E8F0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                      <FileImage size={18} color="#E11D48" />
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                        {selectedFile.name}
+                      </span>
+                      <span style={{ fontSize: '12px', color: '#64748B' }}>
+                        ({formatFileSize(selectedFile.size)})
+                      </span>
+                    </div>
 
-                <div style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', marginBottom: '6px' }}>
-                  이미지 파일을 끌어다 놓거나 클릭하여 선택
-                </div>
-                <div style={{ fontSize: '13px', color: '#64748B', marginBottom: '14px' }}>
-                  완성된 팝업 안내 이미지 한 장을 업로드합니다.
-                </div>
-
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                  {['PNG', 'JPG', 'JPEG', 'WebP'].map(fmt => (
-                    <span
-                      key={fmt}
+                    <button
+                      onClick={handleCancelSelection}
+                      disabled={isUploading}
                       style={{
-                        backgroundColor: '#F1F5F9',
-                        color: '#475569',
-                        fontSize: '11px',
+                        background: 'none',
+                        border: 'none',
+                        color: '#64748B',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '12px',
                         fontWeight: 600,
-                        padding: '3px 8px',
+                        padding: '4px 8px',
                         borderRadius: '6px'
                       }}
                     >
-                      {fmt}
-                    </span>
-                  ))}
-                  <span style={{ fontSize: '11px', color: '#94A3B8', padding: '3px 4px' }}>
-                    (최대 25MB)
-                  </span>
-                </div>
-              </div>
-            ) : (
-              /* Selected Image Preview */
-              <div style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                borderRadius: '14px',
-                border: '1px solid #E2E8F0',
-                backgroundColor: '#FAFAFA',
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  padding: '12px 16px',
-                  backgroundColor: '#FFFFFF',
-                  borderBottom: '1px solid #E2E8F0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                    <FileImage size={18} color="#E11D48" />
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                      {selectedFile.name}
-                    </span>
-                    <span style={{ fontSize: '12px', color: '#64748B' }}>
-                      ({formatFileSize(selectedFile.size)})
-                    </span>
+                      <X size={16} />
+                      <span>선택 취소</span>
+                    </button>
                   </div>
 
-                  <button
-                    onClick={handleCancelSelection}
-                    disabled={isUploading}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#64748B',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      padding: '4px 8px',
-                      borderRadius: '6px'
-                    }}
-                  >
-                    <X size={16} />
-                    <span>선택 취소</span>
-                  </button>
-                </div>
-
-                <div style={{
-                  flex: 1,
-                  minHeight: '280px',
-                  maxHeight: '340px',
-                  padding: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: '#F8FAFC'
-                }}>
-                  {previewUrl && (
-                    <img
-                      src={previewUrl}
-                      alt="선택한 새 이미지 미리보기"
-                      style={{
-                        maxWidth: '100%',
-                        maxHeight: '100%',
-                        objectFit: 'contain',
-                        borderRadius: '8px',
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
-                      }}
-                    />
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Upload Progress Bar */}
-            {isUploading && (
-              <div style={{ marginTop: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#475569', marginBottom: '6px', fontWeight: 600 }}>
-                  <span>태블릿에 이미지 전송 중...</span>
-                  <span>{uploadProgress}%</span>
-                </div>
-                <div style={{ width: '100%', height: '8px', backgroundColor: '#E2E8F0', borderRadius: '4px', overflow: 'hidden' }}>
                   <div style={{
-                    width: `${uploadProgress}%`,
-                    height: '100%',
-                    backgroundColor: '#E11D48',
-                    transition: 'width 0.2s ease'
-                  }} />
+                    padding: '10px 14px',
+                    backgroundColor: '#FFFBEB',
+                    borderBottom: '1px solid #FEF3C7',
+                    fontSize: '12px',
+                    color: '#B45309',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <Info size={14} color="#D97706" />
+                    <span>우측 태블릿 미리보기에서 실제 화면을 확인한 후 아래 적용 버튼을 누르세요.</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Upload Progress Bar */}
+              {isUploading && (
+                <div style={{ marginTop: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#475569', marginBottom: '6px', fontWeight: 600 }}>
+                    <span>태블릿에 이미지 전송 중...</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <div style={{ width: '100%', height: '8px', backgroundColor: '#E2E8F0', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{
+                      width: `${uploadProgress}%`,
+                      height: '100%',
+                      backgroundColor: '#E11D48',
+                      transition: 'width 0.2s ease'
+                    }} />
+                  </div>
+                </div>
+              )}
+
+              {/* Single Apply Button */}
+              <div style={{ marginTop: '20px' }}>
+                <button
+                  onClick={handleApplyToTablet}
+                  disabled={!selectedFile || isUploading}
+                  style={{
+                    width: '100%',
+                    height: '50px',
+                    backgroundColor: !selectedFile || isUploading ? '#CBD5E1' : '#E11D48',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '12px',
+                    fontSize: '15px',
+                    fontWeight: 800,
+                    cursor: !selectedFile || isUploading ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: !selectedFile || isUploading ? 'none' : '0 4px 12px rgba(225, 29, 72, 0.25)',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {isUploading ? (
+                    <>
+                      <RefreshCw size={18} className="spin-animation" />
+                      <span>태블릿에 적용 중...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={18} />
+                      <span>태블릿에 적용</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </section>
+
+            {/* 2. Current Active Image Metadata Card */}
+            <section style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: '16px',
+              border: '1px solid #E2E8F0',
+              padding: '20px 24px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                  현재 배포 중인 정보
+                </h3>
+                <span style={{
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  backgroundColor: '#ECFDF5',
+                  color: '#059669',
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid #A7F3D0'
+                }}>
+                  버전 {activePopup.version}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: '#475569' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748B' }}>파일명:</span>
+                  <span style={{ fontWeight: 600, color: '#0F172A' }}>{activePopup.fileName}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748B' }}>파일 용량:</span>
+                  <span style={{ fontWeight: 600 }}>{formatFileSize(activePopup.fileSize)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748B' }}>마지막 적용:</span>
+                  <span style={{ fontWeight: 600 }}>{formatDate(activePopup.updatedAt)}</span>
                 </div>
               </div>
-            )}
+            </section>
+          </div>
 
-            {/* Single Apply Button */}
-            <div style={{ marginTop: '20px' }}>
-              <button
-                onClick={handleApplyToTablet}
-                disabled={!selectedFile || isUploading}
-                style={{
-                  width: '100%',
-                  height: '52px',
-                  backgroundColor: !selectedFile || isUploading ? '#CBD5E1' : '#E11D48',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: '12px',
-                  fontSize: '16px',
-                  fontWeight: 800,
-                  cursor: !selectedFile || isUploading ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px',
-                  boxShadow: !selectedFile || isUploading ? 'none' : '0 4px 12px rgba(225, 29, 72, 0.25)',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                {isUploading ? (
-                  <>
-                    <RefreshCw size={20} className="spin-animation" />
-                    <span>태블릿에 적용 중...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={20} />
-                    <span>태블릿에 적용</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '12px', color: '#64748B', fontSize: '12px' }}>
-              <Info size={14} color="#94A3B8" />
-              <span>적용 즉시 연결된 모든 키오스크 태블릿에 새 이미지가 자동 반영됩니다.</span>
-            </div>
-          </section>
+          {/* ==================================================== */}
+          {/* RIGHT COLUMN: Interactive Tablet Preview Viewer */}
+          {/* ==================================================== */}
+          <div>
+            <TabletPreviewViewer
+              currentImageUrl={activePopup.imageUrl}
+              selectedImageUrl={previewUrl}
+              selectedFileName={selectedFile?.name}
+              activeSource={previewSource}
+              onSourceChange={setPreviewSource}
+              bubbleText={activePopup.bubbleText}
+            />
+          </div>
         </div>
       </main>
     </div>
