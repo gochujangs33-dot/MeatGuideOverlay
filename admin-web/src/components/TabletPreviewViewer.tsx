@@ -597,21 +597,20 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                         overflow: 'hidden'
                       }}
                     >
-                      {/* LEFT SIDE: Ultra-Compact Vertical Mini Language Pills (KR / EN / JA) */}
+                      {/* TOP-LEFT: Compact Horizontal Language Selector Buttons [ 한글 | English | 日本語 ] */}
                       <div style={{
                         position: 'absolute',
-                        left: '8px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
+                        left: '10px',
+                        top: '10px',
                         display: 'flex',
-                        flexDirection: 'column',
-                        gap: '5px',
+                        flexDirection: 'row',
+                        gap: '4px',
                         zIndex: 40,
                         pointerEvents: 'auto',
-                        backgroundColor: 'rgba(15, 23, 42, 0.65)',
+                        backgroundColor: 'rgba(15, 23, 42, 0.7)',
                         backdropFilter: 'blur(6px)',
                         padding: '3px',
-                        borderRadius: '10px',
+                        borderRadius: '8px',
                         border: '1px solid rgba(255, 255, 255, 0.15)'
                       }}>
                         {(['ko', 'en', 'ja'] as SupportedLanguage[]).map((lang) => {
@@ -629,8 +628,8 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                                 handleSwitchPopupLanguage(lang);
                               }}
                               style={{
-                                padding: '5px 8px',
-                                borderRadius: '6px',
+                                padding: '4px 8px',
+                                borderRadius: '5px',
                                 border: 'none',
                                 fontSize: '11px',
                                 fontWeight: 700,

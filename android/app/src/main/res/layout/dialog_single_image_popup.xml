@@ -16,18 +16,19 @@
         android:layout_gravity="center"
         android:contentDescription="@string/popup_image_desc" />
 
-    <!-- LEFT SIDEBAR: Clean Language Selector Buttons [ 한글 / English / 日本語 ] -->
+    <!-- TOP-LEFT: Clean Language Selector Buttons [ 한글 / English / 日本語 ] -->
     <LinearLayout
         android:id="@+id/layoutLanguageBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="start|center_vertical"
-        android:layout_marginStart="8dp"
+        android:layout_gravity="top|start"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="10dp"
         android:background="@drawable/bg_speech_bubble"
         android:backgroundTint="#A60F172A"
         android:elevation="14dp"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
         android:padding="3dp">
 
         <TextView
@@ -52,7 +53,7 @@
             android:id="@+id/btnLangEn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
+            android:layout_marginStart="3dp"
             android:background="@drawable/bg_speech_bubble"
             android:backgroundTint="#00000000"
             android:clickable="true"
@@ -71,7 +72,7 @@
             android:id="@+id/btnLangJa"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
+            android:layout_marginStart="3dp"
             android:background="@drawable/bg_speech_bubble"
             android:backgroundTint="#00000000"
             android:clickable="true"
