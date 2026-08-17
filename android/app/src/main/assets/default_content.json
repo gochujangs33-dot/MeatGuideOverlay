@@ -13,117 +13,119 @@
   },
   "porkCategory": {
     "title": "돼지고기 특수부위",
-    "description": "엄선된 최고급 돼지고기 특수부위의 풍미와 식감을 즐겨보세요.",
+    "description": "정육점·고깃집에서 판매하는 6가지 특수부위 위치도 & 맛의 특징",
+    "posterImageUrl": "/assets/pork_guide_poster.jpg",
     "items": [
       {
         "id": "pork_ggodle_neck",
-        "name": "꼬들목살",
-        "cutPosition": "돼지 목덜미 위쪽 살코기 부위",
-        "description": "돼지 한 마리당 약 400g만 얻을 수 있는 귀한 특수부위로, 탄력 있는 육질과 꼬들꼬들한 식감이 매력적입니다.",
-        "taste": "고소함이 짙고 씹을수록 감칠맛이 진하게 배어 나오는 맛",
-        "texture": "탱글탱글하고 꼬들꼬들하게 씹히는 독보적인 식감",
-        "recommendation": "첫 점은 구운 소금에 살짝 찍어 고유의 탄력과 육즙을 느껴보세요.",
+        "name": "꼬들목살 (뒷덜미살)",
+        "cutPosition": "머리 뒤쪽, 목덜미 위 쪽 부위 [우리 매장 시그니처 ★]",
+        "description": "머리 뒤쪽 목덜미 부위로, 피하지방과 함께 꼬들꼬들하게 씹히는 식감이 매력적인 우리 매장 대표 시그니처 메뉴입니다.",
+        "taste": "지방과 살코기가 어우러져 고소하고 담백한 맛 (담백함 ★★★★☆, 고소함 ★★★★★)",
+        "texture": "꼬들꼬들한 독보적인 식감 (부드러움 ★★★★★)",
+        "recommendation": "바짝 노릇하게 구워 소금에 살짝 찍어 드시면 꼬들한 식감이 극대화됩니다.",
         "order": 1,
         "visible": true,
-        "imageUrl": "assets/pork_ggodle.png",
-        "silhouetteUrl": "assets/pig_diagram_neck.png"
+        "imageUrl": "assets/pork_ggodle.svg",
+        "silhouetteUrl": "assets/pig_diagram_neck.svg"
       },
       {
         "id": "pork_hangjeong",
-        "name": "항정살",
-        "cutPosition": "돼지 뒷덜미 목과 어깨 사이 부위",
-        "description": "천 겹의 마블링이라 불리는 '천겹살'로, 살코기 사이에 촘촘히 박힌 마블링이 특징인 최고 인기 특수부위입니다.",
-        "taste": "담백하면서도 진한 육즙의 부드러운 고소함",
-        "texture": "아삭아삭하게 씹히면서 부드럽게 녹아내리는 결",
-        "recommendation": "생와사비나 매콤한 파채와 곁들이면 느끼함을 잡아주어 더욱 맛있습니다.",
+        "name": "항정살 (천겹살)",
+        "cutPosition": "턱 아래에서 목 앞쪽으로 연결되는 부위",
+        "description": "천 겹의 마블링이 촘촘하게 박혀 있어 씹을수록 풍부하고 부드러운 고소함이 입안 가득 퍼지는 부위입니다.",
+        "taste": "씹을수록 진한 고소함과 감칠맛 (담백함 ★★☆☆☆, 고소함 ★★★★★)",
+        "texture": "기름지지만 느끼하지 않고 매우 부드러운 식감 (부드러움 ★★★★☆)",
+        "recommendation": "생와사비나 매콤한 파채와 함께 곁들이면 깔끔한 풍미를 느끼실 수 있습니다.",
         "order": 2,
         "visible": true,
-        "imageUrl": "assets/pork_hangjeong.png",
-        "silhouetteUrl": "assets/pig_diagram_hangjeong.png"
-      },
-      {
-        "id": "pork_galmaegi",
-        "name": "갈매기살",
-        "cutPosition": "돼지의 횡격막과 간 사이에 위치한 부위",
-        "description": "소고기의 안창살에 해당하는 부위로 기름기가 적고 단백질과 철분이 풍부하여 육향이 매우 뛰어납니다.",
-        "taste": "소고기를 연상시키는 짙고 깊은 육향과 담백한 풍미",
-        "texture": "쫄깃쫄깃하면서도 부드러운 살코기의 결",
-        "recommendation": "타지 않게 자주 뒤집어가며 미디엄 웰로 구운 후 특제 간장소스에 찍어 드세요.",
-        "order": 3,
-        "visible": true,
-        "imageUrl": "assets/pork_galmaegi.png",
-        "silhouetteUrl": "assets/pig_diagram_galmaegi.png"
-      },
-      {
-        "id": "pork_gabri",
-        "name": "가브리살",
-        "cutPosition": "돼지 등심 앞부분 위쪽의 덧살 부위",
-        "description": "'등심덧살'이라고도 하며, 삼겹살보다 연하고 부드러우며 항정살보다 담백한 황금 밸런스를 자랑합니다.",
-        "taste": "부드럽고 촉촉하며 자극적이지 않은 고급스러운 고소함",
-        "texture": "연하고 찰지며 씹을 때 육즙이 부드럽게 퍼지는 느낌",
-        "recommendation": "멜젓이나 볶은 소금에 찍어 본연의 담백한 풍미를 음미해 보세요.",
-        "order": 4,
-        "visible": true,
-        "imageUrl": "assets/pork_gabri.png",
-        "silhouetteUrl": "assets/pig_diagram_gabri.png"
-      },
-      {
-        "id": "pork_samgyeop",
-        "name": "삼겹살",
-        "cutPosition": "돼지의 갈비 부근에서 뒷다리 전까지의 복부 부위",
-        "description": "살코기와 지방이 층을 이루어 대한민국 국민 모두가 사랑하는 대표 부위로 고소한 풍미가 일품입니다.",
-        "taste": "지방의 고소함과 살코기의 감칠맛이 완벽히 조화된 맛",
-        "texture": "겉은 바삭하고 속은 촉촉한 겉바속촉의 정석",
-        "recommendation": "노릇하게 바싹 익혀 신선한 상추쌈, 쌈장, 구운 김치와 함께 드세요.",
-        "order": 5,
-        "visible": true,
-        "imageUrl": "assets/pork_samgyeop.png",
-        "silhouetteUrl": "assets/pig_diagram_belly.png"
+        "imageUrl": "assets/pork_hangjeong.svg",
+        "silhouetteUrl": "assets/pig_diagram_hangjeong.svg"
       },
       {
         "id": "pork_songi",
         "name": "송이살",
-        "cutPosition": "돼지 갈비 뼈 안쪽의 소량 특수 특미 부위",
-        "description": "송이버섯처럼 결이 살아있고 한 마리에서 극소량만 나오는 특수부위로, 부드러운 감칠맛이 특징입니다.",
-        "taste": "은은한 육향과 씹을수록 퍼지는 깔끔한 고소함",
-        "texture": "부드러우면서도 결이 촉촉하게 살아있는 독특한 식감",
-        "recommendation": "소금 기름장에 가볍게 찍어 은은한 육즙과 부드러움을 즐겨보세요.",
+        "cutPosition": "항정살과 앞다리살 사이 목 아래 안쪽 부위",
+        "description": "돼지 한 마리에서 극소량만 나오는 귀한 부위로, 담백하면서도 쫄깃하고 부드러운 맛이 일품입니다.",
+        "taste": "지방이 적당해 깔끔하고 담백한 맛 (담백함 ★★★★☆, 고소함 ★★★☆☆)",
+        "texture": "부드럽고 쫄깃한 식감 (부드러움 ★★★☆☆)",
+        "recommendation": "소금 기름장에 가볍게 찍어 본연의 담백함을 느껴보세요.",
+        "order": 3,
+        "visible": true,
+        "imageUrl": "assets/pork_songi.svg",
+        "silhouetteUrl": "assets/pig_diagram_songi.svg"
+      },
+      {
+        "id": "pork_gabri",
+        "name": "가브리살 (등심덧살)",
+        "cutPosition": "목살과 등심 사이, 등심 위를 덮고 있는 부위",
+        "description": "살코기와 지방의 밸런스가 뛰어나 부드럽고 담백하며 풍부한 육즙을 자랑하는 고급 특수부위입니다.",
+        "taste": "구웠을 때 고소한 풍미와 진한 육즙 (담백함 ★★★☆☆, 고소함 ★★★★☆)",
+        "texture": "연하고 부드러운 촉촉한 식감 (부드러움 ★★★★☆)",
+        "recommendation": "멜젓이나 볶은 소금에 찍어 본연의 황금 밸런스를 즐겨보세요.",
+        "order": 4,
+        "visible": true,
+        "imageUrl": "assets/pork_gabri.svg",
+        "silhouetteUrl": "assets/pig_diagram_gabri.svg"
+      },
+      {
+        "id": "pork_galmaegi",
+        "name": "갈매기살",
+        "cutPosition": "갈비뼈 안쪽 깊은 곳, 횡격막(가슴과 배를 나누는 막) 부위",
+        "description": "소고기 안창살에 해당하는 부위로, 얇고 쫄깃하며 육향과 감칠맛이 진하게 배어 나오는 부위입니다.",
+        "taste": "육향이 진하고 감칠맛이 강한 맛 (담백함 ★★★★☆, 고소함 ★★★☆☆)",
+        "texture": "쫄깃쫄깃 탄력 있는 식감 (부드러움 ★★★☆☆)",
+        "recommendation": "타지 않게 자주 뒤집어가며 얇게 썰어 구우면 훨씬 맛있습니다.",
+        "order": 5,
+        "visible": true,
+        "imageUrl": "assets/pork_galmaegi.svg",
+        "silhouetteUrl": "assets/pig_diagram_galmaegi.svg"
+      },
+      {
+        "id": "pork_samgyeop",
+        "name": "삼겹살",
+        "cutPosition": "갈비뼈 아래쪽부터 배 전체를 차지하는 부위",
+        "description": "지방과 살코기가 층층이 어우러져 남녀노소 모두가 좋아하는 대한민국 대표 고기 부위입니다.",
+        "taste": "구울수록 고소하고 육즙이 풍부한 맛 (담백함 ★★☆☆☆, 고소함 ★★★★★)",
+        "texture": "바삭하고 촉촉한 부드러운 식감 (부드러움 ★★★★☆)",
+        "recommendation": "노릇하게 구워 구운 김치, 파절이와 함께 곁들여 드세요.",
         "order": 6,
         "visible": true,
-        "imageUrl": "assets/pork_songi.png",
-        "silhouetteUrl": "assets/pig_diagram_songi.png"
+        "imageUrl": "assets/pork_samgyeop.svg",
+        "silhouetteUrl": "assets/pig_diagram_belly.svg"
       }
     ]
   },
   "beefRibItem": {
     "id": "beef_rib_single",
     "name": "소생갈비살",
-    "cutPosition": "갈비뼈 사이의 정선된 꽃갈비살 부위",
-    "description": "갈비뼈 사이에서 정성스럽게 발라낸 최상급 생갈비살로 육즙과 마블링의 조화가 뛰어납니다.",
-    "taste": "풍부한 육즙과 진한 소고기 고유의 감칠맛",
-    "texture": "부드러우면서도 씹을수록 터져 나오는 촉촉한 육즙의 식감",
-    "characteristics": "마블링이 촘촘하여 숯불에 구웠을 때 최상의 풍미를 냅니다.",
-    "recommendation": "미디엄 웰 정도로 겉면만 노릇하게 구워 와사비나 소금과 함께 드시면 가장 맛있습니다.",
-    "imageUrl": "assets/beef_galbi.png",
-    "silhouetteUrl": "assets/cow_diagram_rib.png"
+    "cutPosition": "소 갈비 부위 중 최고급 갈비살 부위",
+    "description": "섬세하고 촘촘한 눈꽃 마블링이 살아있는 최상급 소생갈비살로, 입안 가득 퍼지는 깊은 육즙과 숯불 향의 조화가 탁월합니다. (단일 품목 엄격 제한)",
+    "taste": "숯불 위에서 터져 나오는 풍부하고 진한 소고기 육즙과 고소한 버터리 풍미",
+    "texture": "부드러우면서도 씹는 순간 촉촉하게 녹아내리는 극상의 식감",
+    "characteristics": "우수한 마블링 분포, 최적의 두께 손질, 숯불 직화에 최적화된 육질",
+    "recommendation": "미디엄(Medium) 굽기로 살짝 익혀 첫 점은 천일염에, 두 번째 점은 생와사비와 함께 드세요.",
+    "order": 1,
+    "visible": true,
+    "imageUrl": "assets/beef_galbi.svg",
+    "silhouetteUrl": "assets/cow_diagram_rib.svg"
   },
   "kioskErrorTexts": [
     "서버에 접속이 끊겼습니다",
-    "서버 접속 오류",
-    "네트워크 연결이 끊어졌습니다",
-    "서버와의 연결이 원활하지 않습니다"
+    "서버 접속이 원활하지 않습니다",
+    "네트워크 연결을 확인해주세요",
+    "통신 연결 오류"
   ],
   "restartGuide": {
-    "title": "키오스크 서버 연결 오류",
-    "message": "키오스크 서버 연결 오류가 발생했습니다. 태블릿의 전원을 완전히 껐다가 다시 켜 주세요.",
-    "cooldownMinutes": 5,
-    "allowPowerMenu": true
+    "title": "키오스크 서버 연결 확인 필요 (직원 안내)",
+    "message": "키오스크 화면에 서버 연결 끊김 알림이 감지되었습니다.\n1. 매장 Wi-Fi 공유기 및 랜선 연결 상태를 확인해주세요.\n2. 키오스크 태블릿 전원 버튼을 길게 눌러 [다시 시작]을 진행해주세요.\n3. 지속적인 문제 발생 시 본사 기술 지원팀으로 문의해 주시기 바랍니다.",
+    "cooldownMinutes": 5
   },
   "uiSettings": {
     "autoCloseSeconds": 60,
-    "speechBubbleMode": "TIMEOUT_THEN_CHAR_ONLY",
+    "touchOutsideDismiss": true,
     "speechBubbleTimeoutSeconds": 8,
-    "characterDefaultSide": "RIGHT",
-    "touchOutsideDismiss": true
+    "speechBubbleMode": "TIMEOUT_THEN_CHAR_ONLY",
+    "characterDefaultSide": "RIGHT"
   }
 }

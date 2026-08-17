@@ -195,7 +195,7 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- 2. PORK LIST VIEW (Stage 2A) -->
+                <!-- 2. PORK POSTER & CUTS VIEW (Stage 2A) -->
                 <LinearLayout
                     android:id="@+id/viewPorkList"
                     android:layout_width="match_parent"
@@ -203,22 +203,64 @@
                     android:orientation="vertical"
                     android:visibility="gone">
 
-                    <TextView
-                        android:id="@+id/tvPorkListHeader"
-                        android:layout_width="wrap_content"
+                    <!-- Mode Toggle Header -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="돼지고기 특수부위를 선택해 주세요"
-                        android:textColor="@color/text_primary"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="12dp"/>
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
 
+                        <TextView
+                            android:id="@+id/tvPorkListHeader"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="돼지 특수부위 위치도 &amp; 맛의 특징"
+                            android:textColor="@color/text_primary"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <!-- Toggle Button to switch between Poster and List -->
+                        <Button
+                            android:id="@+id/btnTogglePorkViewMode"
+                            style="@style/Widget.AppCompat.Button.Borderless"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:background="#FFF0F5"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:text="부위별 목록 보기"
+                            android:textColor="@color/text_accent_pork"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- A: Full Poster View (Default) -->
+                    <ScrollView
+                        android:id="@+id/scrollPorkPoster"
+                        android:layout_width="match_parent"
+                        android:layout_height="380dp"
+                        android:fillViewport="true">
+
+                        <ImageView
+                            android:id="@+id/ivPorkGuidePoster"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:adjustViewBounds="true"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/pork_guide_poster"
+                            android:contentDescription="돼지 특수부위 위치도 포스터" />
+                    </ScrollView>
+
+                    <!-- B: Grid RecyclerView of Pork Cuts -->
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rvPorkCuts"
                         android:layout_width="match_parent"
-                        android:layout_height="320dp"
+                        android:layout_height="380dp"
                         android:clipToPadding="false"
-                        android:scrollbars="vertical" />
+                        android:scrollbars="vertical"
+                        android:visibility="gone" />
                 </LinearLayout>
 
                 <!-- 3. MEAT DETAIL VIEW (Stage 2B - Shared for Pork cut or Beef Rib) -->

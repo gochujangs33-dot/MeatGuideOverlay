@@ -367,6 +367,21 @@ class OverlayWindowController(
             showBeefRibDetail()
         }
 
+        // Toggle between Poster and Grid List
+        binding.btnTogglePorkViewMode.setOnClickListener {
+            resetAutoCloseTimer()
+            val isPosterShowing = binding.scrollPorkPoster.visibility == View.VISIBLE
+            if (isPosterShowing) {
+                binding.scrollPorkPoster.visibility = View.GONE
+                binding.rvPorkCuts.visibility = View.VISIBLE
+                binding.btnTogglePorkViewMode.text = "인포그래픽 전체보기"
+            } else {
+                binding.scrollPorkPoster.visibility = View.VISIBLE
+                binding.rvPorkCuts.visibility = View.GONE
+                binding.btnTogglePorkViewMode.text = "부위별 목록 보기"
+            }
+        }
+
         // Setup Pork RecyclerView
         val adapter = PorkCutsAdapter(currentManifest.porkCategory.items) { porkItem ->
             resetAutoCloseTimer()
@@ -401,6 +416,11 @@ class OverlayWindowController(
             b.viewCategorySelector.visibility = View.GONE
             b.viewPorkList.visibility = View.VISIBLE
             b.viewMeatDetail.visibility = View.GONE
+
+            // Default to full Poster View
+            b.scrollPorkPoster.visibility = View.VISIBLE
+            b.rvPorkCuts.visibility = View.GONE
+            b.btnTogglePorkViewMode.text = "부위별 목록 보기"
 
             (b.rvPorkCuts.adapter as? PorkCutsAdapter)?.updateItems(currentManifest.porkCategory.items)
         }

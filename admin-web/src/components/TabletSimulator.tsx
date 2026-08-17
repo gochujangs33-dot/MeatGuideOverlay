@@ -12,6 +12,7 @@ export const TabletSimulator: React.FC<TabletSimulatorProps> = ({ manifest }) =>
   const [overlayStage, setOverlayStage] = useState<'categories' | 'pork_list' | 'meat_detail'>('categories');
   const [selectedPorkCut, setSelectedPorkCut] = useState<PorkItem | null>(null);
   const [selectedMeatType, setSelectedMeatType] = useState<'pork' | 'beef'>('pork');
+  const [porkViewMode, setPorkViewMode] = useState<'poster' | 'grid'>('poster');
   const [timerSeconds, setTimerSeconds] = useState(manifest.uiSettings.autoCloseSeconds || 60);
 
   useEffect(() => {
@@ -309,31 +310,69 @@ export const TabletSimulator: React.FC<TabletSimulatorProps> = ({ manifest }) =>
                       </div>
                     )}
 
-                    {/* Stage 2A: PORK CUTS LIST */}
+                    {/* Stage 2A: PORK POSTER & CUTS LIST */}
                     {overlayStage === 'pork_list' && (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                        {manifest.porkCategory.items.filter(i => i.visible).map(cut => (
-                          <div
-                            key={cut.id}
-                            onClick={() => handleSelectPorkCut(cut)}
+                      <div>
+                        {/* Toggle Controls */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                          <span style={{ fontSize: '14px', fontWeight: 800, color: '#212121' }}>
+                            돼지 특수부위 위치도 &amp; 맛의 특징
+                          </span>
+                          <button
+                            onClick={() => setPorkViewMode(prev => prev === 'poster' ? 'grid' : 'poster')}
                             style={{
-                              background: '#F9FAFB',
-                              border: '1px solid #E5E7EB',
-                              borderRadius: '12px',
-                              padding: '12px',
-                              cursor: 'pointer',
-                              textAlign: 'center'
+                              background: '#FFF0F5',
+                              border: '1px solid #F48FB1',
+                              borderRadius: '8px',
+                              padding: '6px 12px',
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              color: '#C2185B',
+                              cursor: 'pointer'
                             }}
                           >
-                            <img src={cut.silhouetteUrl || '/assets/pig_diagram_neck.svg'} alt={cut.name} style={{ width: '100%', height: '50px' }} />
-                            <div style={{ fontWeight: 800, color: '#212121', fontSize: '14px', marginTop: '6px' }}>
-                              {cut.name}
-                            </div>
-                            <div style={{ fontSize: '11px', color: '#C2185B', marginTop: '2px' }}>
-                              {cut.cutPosition}
-                            </div>
+                            {porkViewMode === 'poster' ? '부위별 상세 목록 보기' : '인포그래픽 전체보기'}
+                          </button>
+                        </div>
+
+                        {/* Mode A: High-Definition Poster (Default) */}
+                        {porkViewMode === 'poster' && (
+                          <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid #E5E7EB', maxHeight: '360px', overflowY: 'auto' }}>
+                            <img
+                              src="/assets/pork_guide_poster.jpg"
+                              alt="돼지 특수부위 위치도"
+                              style={{ width: '100%', height: 'auto', display: 'block' }}
+                            />
                           </div>
-                        ))}
+                        )}
+
+                        {/* Mode B: Grid List */}
+                        {porkViewMode === 'grid' && (
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                            {manifest.porkCategory.items.filter(i => i.visible).map(cut => (
+                              <div
+                                key={cut.id}
+                                onClick={() => handleSelectPorkCut(cut)}
+                                style={{
+                                  background: '#F9FAFB',
+                                  border: '1px solid #E5E7EB',
+                                  borderRadius: '12px',
+                                  padding: '12px',
+                                  cursor: 'pointer',
+                                  textAlign: 'center'
+                                }}
+                              >
+                                <img src={cut.silhouetteUrl || '/assets/pig_diagram_neck.svg'} alt={cut.name} style={{ width: '100%', height: '50px' }} />
+                                <div style={{ fontWeight: 800, color: '#212121', fontSize: '14px', marginTop: '6px' }}>
+                                  {cut.name}
+                                </div>
+                                <div style={{ fontSize: '11px', color: '#C2185B', marginTop: '2px' }}>
+                                  {cut.cutPosition}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
 
