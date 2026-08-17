@@ -497,44 +497,46 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Floating Pig Mascot Character & Speech Bubble */}
+              {/* Floating Pig Mascot Character & Speech Bubble (Half-size, Top-Right positioned) */}
               {!isOpen && (
                 <div
                   onClick={handleOpenPopup}
                   style={{
                     position: 'absolute',
-                    top: '30%',
-                    right: '12px',
+                    top: '10px',
+                    right: '10px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
+                    gap: '5px',
                     cursor: 'pointer',
                     zIndex: 20
                   }}
                 >
-                  {/* Speech Bubble: Clean Top "KR/EN/JA" Badge + Bottom Text */}
+                  {/* Half-sized Speech Bubble: Top "KR/EN/JA" Badge + Bottom Text */}
                   <div style={{
                     backgroundColor: '#FFFFFF',
-                    border: '1.5px solid #F48FB1',
-                    borderRadius: '14px',
-                    padding: '8px 12px',
-                    boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
-                    maxWidth: '190px',
+                    border: '1px solid #F48FB1',
+                    borderRadius: '8px',
+                    padding: '4px 7px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                    maxWidth: '125px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '3px'
+                    gap: '1px'
                   }}>
-                    {/* Top: Clean Language Code (KR / EN / JA) */}
+                    {/* Top: Language Code (KR / EN / JA) */}
                     <div>
                       <span style={{
-                        fontSize: '10px',
+                        fontSize: '8px',
                         fontWeight: 800,
                         backgroundColor: '#FFF0F5',
                         color: '#E11D48',
-                        padding: '1px 6px',
-                        borderRadius: '4px',
+                        padding: '1px 3px',
+                        borderRadius: '3px',
                         textTransform: 'uppercase',
-                        letterSpacing: '0.5px'
+                        letterSpacing: '0.3px',
+                        display: 'inline-block',
+                        lineHeight: 1.1
                       }}>
                         {bubbleLang === 'ko' ? 'KR' : bubbleLang === 'en' ? 'EN' : 'JA'}
                       </span>
@@ -542,10 +544,10 @@ export const TabletPreviewViewer: React.FC<Props> = ({
 
                     {/* Bottom: Speech Bubble Text Content */}
                     <div style={{
-                      fontSize: '11px',
+                      fontSize: '9px',
                       fontWeight: 700,
                       color: '#0F172A',
-                      lineHeight: 1.35,
+                      lineHeight: 1.2,
                       opacity: bubbleFade ? 1 : 0,
                       transition: 'opacity 0.15s ease-in-out'
                     }}>
@@ -553,23 +555,23 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                     </div>
                   </div>
 
-                  {/* Pig Mascot Character Avatar */}
+                  {/* Half-sized Pig Mascot Character Avatar */}
                   <div style={{
-                    width: '52px',
-                    height: '52px',
-                    borderRadius: '26px',
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '14px',
                     backgroundColor: '#FFE0B2',
-                    border: '2px solid #E11D48',
+                    border: '1.5px solid #E11D48',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: '0 4px 14px rgba(225, 29, 72, 0.35)',
+                    boxShadow: '0 2px 8px rgba(225, 29, 72, 0.3)',
                     transition: 'transform 0.15s ease'
                   }}>
                     <img
                       src="/assets/char_mascot.svg"
                       alt="돼지 캐릭터 마스코트"
-                      style={{ width: '42px', height: '42px', objectFit: 'contain' }}
+                      style={{ width: '22px', height: '22px', objectFit: 'contain' }}
                     />
                   </div>
                 </div>
@@ -597,20 +599,20 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                         overflow: 'hidden'
                       }}
                     >
-                      {/* TOP-LEFT: Compact Vertical Language Selector Buttons [ 한글 / English / 日本語 ] */}
+                      {/* TOP-LEFT: Half-Sized Vertical Language Selector Buttons [ 한글 / English / 日本語 ] */}
                       <div style={{
                         position: 'absolute',
-                        left: '10px',
-                        top: '10px',
+                        left: '8px',
+                        top: '8px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '3px',
+                        gap: '2px',
                         zIndex: 40,
                         pointerEvents: 'auto',
                         backgroundColor: 'rgba(15, 23, 42, 0.7)',
                         backdropFilter: 'blur(6px)',
-                        padding: '3px',
-                        borderRadius: '8px',
+                        padding: '2px',
+                        borderRadius: '6px',
                         border: '1px solid rgba(255, 255, 255, 0.15)'
                       }}>
                         {(['ko', 'en', 'ja'] as SupportedLanguage[]).map((lang) => {
@@ -628,10 +630,10 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                                 handleSwitchPopupLanguage(lang);
                               }}
                               style={{
-                                padding: '4px 8px',
-                                borderRadius: '5px',
+                                padding: '2px 5px',
+                                borderRadius: '4px',
                                 border: 'none',
-                                fontSize: '11px',
+                                fontSize: '8.5px',
                                 fontWeight: 700,
                                 backgroundColor: isActive ? '#E11D48' : 'transparent',
                                 color: isActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.75)',
@@ -649,7 +651,7 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                         })}
                       </div>
 
-                      {/* TOP-RIGHT: Compact Close Button */}
+                      {/* TOP-RIGHT: Half-Sized Close Button */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -662,20 +664,20 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                           backgroundColor: 'rgba(15, 23, 42, 0.65)',
                           border: '1px solid rgba(255, 255, 255, 0.15)',
                           color: '#FFFFFF',
-                          borderRadius: '14px',
-                          padding: '4px 10px',
-                          fontSize: '11px',
+                          borderRadius: '8px',
+                          padding: '3px 7px',
+                          fontSize: '9px',
                           fontWeight: 700,
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '3px',
+                          gap: '2px',
                           backdropFilter: 'blur(6px)',
                           zIndex: 40,
                           pointerEvents: 'auto'
                         }}
                       >
-                        <X size={13} />
+                        <X size={11} />
                         <span>닫기</span>
                       </button>
 

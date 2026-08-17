@@ -16,20 +16,20 @@
         android:layout_gravity="center"
         android:contentDescription="@string/popup_image_desc" />
 
-    <!-- TOP-LEFT: Vertical Clean Language Selector Buttons [ 한글 / English / 日本語 ] -->
+    <!-- TOP-LEFT: Half-Sized Vertical Language Selector Buttons [ 한글 / English / 日本語 ] -->
     <LinearLayout
         android:id="@+id/layoutLanguageBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|start"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
         android:background="@drawable/bg_speech_bubble"
-        android:backgroundTint="#A60F172A"
+        android:backgroundTint="#B30F172A"
         android:elevation="14dp"
         android:gravity="center_horizontal"
         android:orientation="vertical"
-        android:padding="3dp">
+        android:padding="2dp">
 
         <TextView
             android:id="@+id/btnLangKo"
@@ -40,71 +40,71 @@
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
-            android:paddingStart="8dp"
-            android:paddingTop="5dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="5dp"
+            android:paddingStart="5dp"
+            android:paddingTop="3dp"
+            android:paddingEnd="5dp"
+            android:paddingBottom="3dp"
             android:text="한글"
             android:textColor="#FFFFFF"
-            android:textSize="11sp"
+            android:textSize="9sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/btnLangEn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
+            android:layout_marginTop="2dp"
             android:background="@drawable/bg_speech_bubble"
             android:backgroundTint="#00000000"
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
-            android:paddingStart="8dp"
-            android:paddingTop="5dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="5dp"
+            android:paddingStart="5dp"
+            android:paddingTop="3dp"
+            android:paddingEnd="5dp"
+            android:paddingBottom="3dp"
             android:text="English"
             android:textColor="#B3FFFFFF"
-            android:textSize="11sp"
+            android:textSize="9sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/btnLangJa"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
+            android:layout_marginTop="2dp"
             android:background="@drawable/bg_speech_bubble"
             android:backgroundTint="#00000000"
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
-            android:paddingStart="8dp"
-            android:paddingTop="5dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="5dp"
+            android:paddingStart="5dp"
+            android:paddingTop="3dp"
+            android:paddingEnd="5dp"
+            android:paddingBottom="3dp"
             android:text="日本語"
             android:textColor="#B3FFFFFF"
-            android:textSize="11sp"
+            android:textSize="9sp"
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- TOP-RIGHT: Compact Close Button -->
+    <!-- TOP-RIGHT: Half-Sized Close Button -->
     <FrameLayout
         android:id="@+id/btnClosePopup"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|end"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="10dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
         android:background="@drawable/bg_speech_bubble"
-        android:backgroundTint="#A60F172A"
+        android:backgroundTint="#B30F172A"
         android:clickable="true"
         android:elevation="14dp"
         android:focusable="true"
-        android:paddingStart="10dp"
-        android:paddingTop="5dp"
-        android:paddingEnd="10dp"
-        android:paddingBottom="5dp">
+        android:paddingStart="7dp"
+        android:paddingTop="3dp"
+        android:paddingEnd="7dp"
+        android:paddingBottom="3dp">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -113,8 +113,8 @@
             android:orientation="horizontal">
 
             <ImageView
-                android:layout_width="14dp"
-                android:layout_height="14dp"
+                android:layout_width="11dp"
+                android:layout_height="11dp"
                 android:contentDescription="@string/dialog_close"
                 android:src="@drawable/ic_close_24"
                 app:tint="#FFFFFF" />
@@ -122,10 +122,10 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
+                android:layout_marginStart="3dp"
                 android:text="@string/dialog_close"
                 android:textColor="#FFFFFF"
-                android:textSize="11sp"
+                android:textSize="9sp"
                 android:textStyle="bold" />
         </LinearLayout>
     </FrameLayout>

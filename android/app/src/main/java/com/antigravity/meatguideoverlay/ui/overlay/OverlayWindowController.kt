@@ -137,7 +137,7 @@ class OverlayWindowController(
         val binding = OverlayFloatingCharacterBinding.inflate(LayoutInflater.from(context))
         floatingBinding = binding
 
-        val initialY = (screenHeight * 0.35f).toInt()
+        val initialY = 16
         val layoutParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -147,7 +147,7 @@ class OverlayWindowController(
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = screenWidth - 160
+            x = screenWidth - 120
             y = initialY
         }
         floatingLayoutParams = layoutParams
@@ -161,7 +161,7 @@ class OverlayWindowController(
 
             scope.launch {
                 val side = preferencesManager.characterSideFlow.first()
-                val targetX = if (side == "LEFT") 16 else screenWidth - 160
+                val targetX = if (side == "LEFT") 16 else screenWidth - 120
                 mainHandler.post {
                     layoutParams.x = targetX
                     if (isCharacterAttached) {
