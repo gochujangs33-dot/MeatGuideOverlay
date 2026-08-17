@@ -7,7 +7,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.antigravity.meatguideoverlay.R
-import com.antigravity.meatguideoverlay.data.repository.ContentRepository
+import com.antigravity.meatguideoverlay.data.repository.PopupImageRepository
 import com.antigravity.meatguideoverlay.databinding.ActivityStaffDashboardBinding
 import com.antigravity.meatguideoverlay.service.KioskErrorAccessibilityService
 import com.antigravity.meatguideoverlay.service.OverlayForegroundService
@@ -24,7 +24,7 @@ class StaffDashboardActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityStaffDashboardBinding
     private lateinit var preferencesManager: PreferencesManager
-    private lateinit var repository: ContentRepository
+    private lateinit var repository: PopupImageRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,7 +32,7 @@ class StaffDashboardActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         preferencesManager = PreferencesManager(this)
-        repository = ContentRepository.getInstance(this)
+        repository = PopupImageRepository.getInstance(this)
 
         setupListeners()
         observeData()
@@ -75,8 +75,8 @@ class StaffDashboardActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch {
-            repository.contentFlow.collect { manifest ->
-                binding.tvDashContentVersion.text = "v${manifest.contentVersion}"
+            repository.activePopupState.collect { info ->
+                binding.tvDashContentVersion.text = "v${info.version} (${info.fileName})"
             }
         }
     }
@@ -86,14 +86,14 @@ class StaffDashboardActivity : AppCompatActivity() {
             binding.btnDashSyncNow.isEnabled = false
             binding.tvDashLastSync.text = "동기화 진행 중..."
             lifecycleScope.launch {
-                val result = repository.syncNow()
+                val success = repository.refreshSync()
                 binding.btnDashSyncNow.isEnabled = true
-                if (result.isSuccess) {
+                if (success) {
                     val timeStr = SimpleDateFormat("HH:mm:ss", Locale.KOREA).format(Date())
-                    binding.tvDashLastSync.text = "$timeStr (동기화 성공 v${result.getOrNull()?.contentVersion})"
-                    Toast.makeText(this@StaffDashboardActivity, "콘텐츠 동기화 완료!", Toast.LENGTH_SHORT).show()
+                    binding.tvDashLastSync.text = "$timeStr (동기화 완료)"
+                    Toast.makeText(this@StaffDashboardActivity, "이미지 동기화 완료!", Toast.LENGTH_SHORT).show()
                 } else {
-                    binding.tvDashLastSync.text = "동기화 실패: ${result.exceptionOrNull()?.message}"
+                    binding.tvDashLastSync.text = "동기화 실패 (오프라인 캐시 사용)"
                     Toast.makeText(this@StaffDashboardActivity, "동기화 실패 (오프라인 캐시 사용)", Toast.LENGTH_SHORT).show()
                 }
             }

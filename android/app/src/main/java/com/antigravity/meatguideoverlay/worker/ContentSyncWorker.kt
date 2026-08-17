@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.antigravity.meatguideoverlay.data.repository.ContentRepository
+import com.antigravity.meatguideoverlay.data.repository.PopupImageRepository
 
 class ContentSyncWorker(
     context: Context,
@@ -19,9 +19,9 @@ class ContentSyncWorker(
     override suspend fun doWork(): Result {
         Log.d(TAG, "ContentSyncWorker running periodic background check")
         return try {
-            val repository = ContentRepository.getInstance(applicationContext)
-            val syncResult = repository.syncNow()
-            if (syncResult.isSuccess) {
+            val repository = com.antigravity.meatguideoverlay.data.repository.PopupImageRepository.getInstance(applicationContext)
+            val success = repository.refreshSync()
+            if (success) {
                 Result.success()
             } else {
                 Result.retry()

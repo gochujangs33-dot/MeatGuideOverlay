@@ -2,25 +2,21 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     
-    function isAdmin() {
-      return request.auth != null && 
-        firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
-    }
-    
     function isValidImage() {
-      return request.resource.size < 3 * 1024 * 1024
+      return request.resource.size < 25 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
     }
 
-    // Content Assets (Character, Meat cuts, Silhouettes)
-    match /content_images/{allPaths=**} {
+    // Popup poster images (PNG, JPG, JPEG, WebP up to 25MB)
+    match /popups/{allPaths=**} {
       allow read: if request.auth != null;
-      allow write: if isAdmin() && isValidImage();
+      allow write: if request.auth != null && isValidImage();
     }
 
+    // Static assets fallback
     match /assets/{allPaths=**} {
       allow read: if request.auth != null;
-      allow write: if isAdmin() && isValidImage();
+      allow write: if request.auth != null && isValidImage();
     }
   }
 }

@@ -60,6 +60,10 @@ class PreferencesManager(private val context: Context) {
         prefs[KEY_SPEECH_BUBBLE_MODE] ?: "TIMEOUT_THEN_CHAR_ONLY"
     }
 
+    val characterSideFlow: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[KEY_CHAR_SIDE] ?: "RIGHT"
+    }
+
     suspend fun setSetupCompleted(completed: Boolean) {
         context.dataStore.edit { it[KEY_SETUP_COMPLETED] = completed }
     }
@@ -72,6 +76,12 @@ class PreferencesManager(private val context: Context) {
         context.dataStore.edit {
             it[KEY_CHAR_X] = x
             it[KEY_CHAR_Y] = y
+            it[KEY_CHAR_SIDE] = side
+        }
+    }
+
+    suspend fun saveCharacterSide(side: String) {
+        context.dataStore.edit {
             it[KEY_CHAR_SIDE] = side
         }
     }

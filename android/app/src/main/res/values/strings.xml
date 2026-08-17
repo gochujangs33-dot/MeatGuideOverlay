@@ -21,6 +21,7 @@
     <string name="dialog_close">닫기</string>
     <string name="dialog_back">이전</string>
     <string name="default_speech_bubble">이 고기가 어떤 부위인지 궁금하신가요?</string>
+    <string name="popup_image_desc">고기 부위 안내 팝업 이미지</string>
 
     <!-- Detail Attributes -->
     <string name="label_cut_position">부위 위치</string>

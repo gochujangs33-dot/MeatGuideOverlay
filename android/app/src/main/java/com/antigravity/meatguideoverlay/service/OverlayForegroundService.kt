@@ -13,7 +13,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.antigravity.meatguideoverlay.MainActivity
 import com.antigravity.meatguideoverlay.R
-import com.antigravity.meatguideoverlay.data.repository.ContentRepository
+import com.antigravity.meatguideoverlay.data.repository.PopupImageRepository
 import com.antigravity.meatguideoverlay.ui.overlay.OverlayWindowController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,21 +54,20 @@ class OverlayForegroundService : Service() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private lateinit var overlayController: OverlayWindowController
-    private lateinit var repository: ContentRepository
+    private lateinit var repository: com.antigravity.meatguideoverlay.data.repository.PopupImageRepository
 
     override fun onCreate() {
         super.onCreate()
         overlayController = OverlayWindowController.getInstance(this)
-        repository = ContentRepository.getInstance(this)
+        repository = com.antigravity.meatguideoverlay.data.repository.PopupImageRepository.getInstance(this)
 
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, createNotification())
 
-        // Collect content changes reactively
+        // Collect popup updates reactively
         serviceScope.launch {
-            repository.contentFlow.collect { manifest ->
-                Log.d(TAG, "Content updated in service: v${manifest.contentVersion}")
-                overlayController.updateContent(manifest)
+            repository.activePopupState.collect { info ->
+                Log.d(TAG, "Active popup image updated in service: v${info.version}")
             }
         }
     }

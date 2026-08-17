@@ -2,44 +2,22 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to check if user is an admin
-    function isAdmin() {
-      return request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
-    }
-    
-    // Helper function to check if user is authenticated (anonymous or logged in)
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Published content: Accessible to all authenticated users (including anonymous tablets)
+    // Active popup image descriptor:
+    // Tablets can read real-time updates anonymously.
+    // Managers can update current active image.
+    match /active_popup/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Legacy/fallback compatibility
     match /published/{docId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-
-    // Content history: Readable by admins, writable by admins on publish
-    match /content_history/{version} {
-      allow read, write: if isAdmin();
-    }
-
-    // Drafts: Strictly admin only
-    match /drafts/{docId} {
-      allow read, write: if isAdmin();
-    }
-
-    // Admins registry: Strictly admin only
-    match /admins/{adminUid} {
-      allow read, write: if isAdmin();
-    }
-
-    // Devices status:
-    // Tablets can create/update their own status document
-    // Admins can read all device statuses
-    match /devices/{deviceUid} {
-      allow read: if isAdmin() || (isAuthenticated() && request.auth.uid == deviceUid);
-      allow create, update: if isAuthenticated() && request.auth.uid == deviceUid;
-      allow delete: if isAdmin();
+      allow write: if isAuthenticated();
     }
   }
 }

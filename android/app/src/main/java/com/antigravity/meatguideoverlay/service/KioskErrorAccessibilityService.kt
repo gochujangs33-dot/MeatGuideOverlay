@@ -5,7 +5,6 @@ import android.content.Context
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
-import com.antigravity.meatguideoverlay.data.repository.ContentRepository
 import com.antigravity.meatguideoverlay.ui.overlay.OverlayWindowController
 import com.antigravity.meatguideoverlay.util.ErrorTextMatcher
 import com.antigravity.meatguideoverlay.util.PreferencesManager
@@ -31,8 +30,14 @@ class KioskErrorAccessibilityService : AccessibilityService() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val errorMatcher = ErrorTextMatcher()
     private lateinit var preferencesManager: PreferencesManager
-    private lateinit var repository: ContentRepository
     private lateinit var overlayController: OverlayWindowController
+
+    private val defaultErrorPatterns = listOf(
+        "서버에 접속이 끊겼습니다",
+        "서버 접속이 원활하지 않습니다",
+        "네트워크 연결을 확인해주세요",
+        "통신 연결 오류"
+    )
 
     private var targetKioskPackage: String = ""
     private var lastProcessedEventTime = 0L
@@ -41,7 +46,6 @@ class KioskErrorAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         isServiceRunning = true
         preferencesManager = PreferencesManager(this)
-        repository = ContentRepository.getInstance(this)
         overlayController = OverlayWindowController.getInstance(this)
 
         serviceScope.launch {
@@ -89,12 +93,10 @@ class KioskErrorAccessibilityService : AccessibilityService() {
                 if (extractedTexts.isEmpty()) return@launch
 
                 val fullScreenText = extractedTexts.joinToString(" ")
-                val manifest = repository.contentFlow.value
-                val errorPatterns = manifest.kioskErrorTexts
 
                 // 4. Check matching with normalized text
-                if (errorMatcher.matches(fullScreenText, errorPatterns)) {
-                    val cooldownMinutes = manifest.restartGuide.cooldownMinutes.coerceAtLeast(1)
+                if (errorMatcher.matches(fullScreenText, defaultErrorPatterns)) {
+                    val cooldownMinutes = 5
                     val errorKey = "kiosk_server_disconnect"
 
                     if (errorMatcher.canTrigger(errorKey, cooldownMinutes)) {
@@ -102,8 +104,8 @@ class KioskErrorAccessibilityService : AccessibilityService() {
                         errorMatcher.recordTriggered(errorKey)
 
                         overlayController.showKioskErrorDialog(
-                            title = manifest.restartGuide.title,
-                            message = manifest.restartGuide.message
+                            title = "키오스크 서버 연결 확인 필요 (직원 안내)",
+                            message = "키오스크 화면에 서버 연결 끊김 알림이 감지되었습니다.\n1. 매장 Wi-Fi 공유기 및 랜선 연결 상태를 확인해주세요.\n2. 키오스크 태블릿 전원 버튼을 길게 눌러 [다시 시작]을 진행해주세요."
                         )
                     } else {
                         Log.d(TAG, "Error matched but cooldown active ($cooldownMinutes min). Suppressed repeat dialog.")
