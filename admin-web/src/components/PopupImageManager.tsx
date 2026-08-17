@@ -10,7 +10,8 @@ import {
   LogOut,
   MessageSquare,
   Globe,
-  Languages
+  Languages,
+  Wand2
 } from 'lucide-react';
 import { ActivePopupInfo, SupportedLanguage } from '../types/popup';
 import {
@@ -20,6 +21,7 @@ import {
   validateImageFile,
   DEFAULT_ACTIVE_POPUP
 } from '../services/popupService';
+import { autoTranslateKoreanToAll } from '../services/translationService';
 import { TabletPreviewViewer } from './TabletPreviewViewer';
 
 interface Props {
@@ -65,6 +67,11 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
     en: DEFAULT_ACTIVE_POPUP.bubbleTextEn || 'Wondering which cut of meat this is?',
     ja: DEFAULT_ACTIVE_POPUP.bubbleTextJa || 'このお肉がどの部位か気になりますか？'
   });
+
+  // Auto-translation state
+  const [isTranslating, setIsTranslating] = useState<boolean>(false);
+  const [autoTranslatedFlag, setAutoTranslatedFlag] = useState<boolean>(false);
+  const translationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Active source toggle for the preview viewer: 'current' vs 'selected'
   const [previewSource, setPreviewSource] = useState<'current' | 'selected'>('current');
@@ -122,6 +129,42 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
       if (urls.ja) URL.revokeObjectURL(urls.ja);
     };
   }, [selectedFiles]);
+
+  // Execute Translation Function
+  const handlePerformTranslation = async (koreanText: string) => {
+    if (!koreanText.trim()) return;
+
+    setIsTranslating(true);
+    try {
+      const translated = await autoTranslateKoreanToAll(koreanText);
+      setBubbleTexts((prev) => ({
+        ...prev,
+        en: translated.en,
+        ja: translated.ja
+      }));
+      setAutoTranslatedFlag(true);
+    } catch (err) {
+      console.warn('Auto translation error:', err);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  // Handle Korean input change with debounced auto-translation
+  const handleKoreanBubbleTextChange = (text: string) => {
+    setBubbleTexts((prev) => ({ ...prev, ko: text }));
+    setAutoTranslatedFlag(false);
+
+    if (translationTimeoutRef.current) {
+      clearTimeout(translationTimeoutRef.current);
+    }
+
+    if (text.trim().length > 1) {
+      translationTimeoutRef.current = setTimeout(() => {
+        handlePerformTranslation(text);
+      }, 650);
+    }
+  };
 
   const handleFileSelect = (file: File, lang: SupportedLanguage) => {
     setErrorMessage(null);
@@ -271,10 +314,10 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
           </div>
           <div>
             <h1 style={{ fontSize: '20px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-              고기 부위 안내 다국어 관리 (한·영·일)
+              고기 부위 안내 다국어 관리 (한·영·일 자동 번역)
             </h1>
             <p style={{ fontSize: '13px', color: '#64748B', margin: '2px 0 0 0' }}>
-              3개 국어(한글/영어/일어) 팝업 이미지 및 3초 순환 말풍선 문구를 통합 관리합니다.
+              한글 문구를 입력하면 영어·일본어로 자동 번역되며 3초마다 순환합니다.
             </p>
           </div>
         </div>
@@ -359,7 +402,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
           {/* LEFT COLUMN: Multi-Language Registration & Management Area */}
           {/* ==================================================== */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* 1. Speech Bubble Text Multi-Language Customization */}
+            {/* 1. Speech Bubble Text Multi-Language Auto-Translation Card */}
             <section style={{
               backgroundColor: '#FFFFFF',
               borderRadius: '16px',
@@ -371,54 +414,111 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <MessageSquare size={18} color="#E11D48" />
                   <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-                    말풍선 3초 순환 문구 (한·영·일)
+                    말풍선 문구 자동 번역 (한글 ➔ 영·일)
                   </h2>
                 </div>
-                <span style={{
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  backgroundColor: '#FFF0F5',
-                  color: '#E11D48',
-                  padding: '2px 8px',
-                  borderRadius: '6px'
-                }}>
-                  3초마다 자동 순환
-                </span>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {isTranslating ? (
+                    <span style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      backgroundColor: '#EFF6FF',
+                      color: '#2563EB',
+                      padding: '2px 8px',
+                      borderRadius: '6px'
+                    }}>
+                      <RefreshCw size={11} className="spin-animation" />
+                      <span>번역 중...</span>
+                    </span>
+                  ) : autoTranslatedFlag ? (
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      backgroundColor: '#ECFDF5',
+                      color: '#059669',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      border: '1px solid #A7F3D0'
+                    }}>
+                      ✓ 자동 번역됨
+                    </span>
+                  ) : (
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      backgroundColor: '#FFF0F5',
+                      color: '#E11D48',
+                      padding: '2px 8px',
+                      borderRadius: '6px'
+                    }}>
+                      3초 순환
+                    </span>
+                  )}
+                </div>
               </div>
+
               <p style={{ fontSize: '12px', color: '#64748B', margin: '0 0 14px 0' }}>
-                태블릿 키오스크 화면에서 돼지 캐릭터 옆 말풍선이 3초 주기로 한글 ➔ 영어 ➔ 일본어로 자동 순환합니다.
+                한글 문구를 입력하면 영어와 일본어로 <strong>실시간 자동 번역</strong>되어 태블릿에서 3초마다 순환합니다.
               </p>
 
-              {/* 3 Language Inputs */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {/* Korean */}
+              {/* 3 Language Inputs with Auto-Translate */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {/* 1. Korean Input with Instant Auto-Translate Button */}
                 <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
-                    <span>🇰🇷 한국어 (기본)</span>
-                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#0F172A' }}>
+                      <span>🇰🇷 한국어 문구 (입력 시 자동 번역)</span>
+                    </label>
+                    <button
+                      onClick={() => handlePerformTranslation(bubbleTexts.ko)}
+                      disabled={isTranslating || !bubbleTexts.ko.trim()}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        backgroundColor: '#FFF0F5',
+                        border: '1px solid #FBCFE8',
+                        color: '#E11D48',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        cursor: isTranslating || !bubbleTexts.ko.trim() ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      <Wand2 size={12} />
+                      <span>AI 번역 실행</span>
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={bubbleTexts.ko}
-                    onChange={(e) => setBubbleTexts((prev) => ({ ...prev, ko: e.target.value }))}
-                    placeholder="이 고기가 어떤 부위인지 궁금하신가요?"
+                    onChange={(e) => handleKoreanBubbleTextChange(e.target.value)}
+                    placeholder="예: 이 고기가 어떤 부위인지 궁금하신가요?"
                     style={{
                       width: '100%',
                       boxSizing: 'border-box',
-                      padding: '8px 12px',
+                      padding: '9px 12px',
                       borderRadius: '8px',
-                      border: '1.5px solid #CBD5E1',
+                      border: '2px solid #E11D48',
                       fontSize: '13px',
                       color: '#0F172A',
-                      fontWeight: 600,
-                      outline: 'none'
+                      fontWeight: 700,
+                      outline: 'none',
+                      backgroundColor: '#FFF'
                     }}
                   />
                 </div>
 
-                {/* English */}
+                {/* 2. English (Auto-translated / Editable) */}
                 <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
-                    <span>🇺🇸 English (영어)</span>
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    <span>🇺🇸 English (자동 번역 결과)</span>
+                    <span style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 500 }}>직접 수정 가능</span>
                   </label>
                   <input
                     type="text"
@@ -434,15 +534,17 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                       fontSize: '13px',
                       color: '#0F172A',
                       fontWeight: 600,
-                      outline: 'none'
+                      outline: 'none',
+                      backgroundColor: '#F8FAFC'
                     }}
                   />
                 </div>
 
-                {/* Japanese */}
+                {/* 3. Japanese (Auto-translated / Editable) */}
                 <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
-                    <span>🇯🇵 日本語 (일본어)</span>
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    <span>🇯🇵 日本語 (자동 번역 결과)</span>
+                    <span style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 500 }}>직접 수정 가능</span>
                   </label>
                   <input
                     type="text"
@@ -458,7 +560,8 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                       fontSize: '13px',
                       color: '#0F172A',
                       fontWeight: 600,
-                      outline: 'none'
+                      outline: 'none',
+                      backgroundColor: '#F8FAFC'
                     }}
                   />
                 </div>

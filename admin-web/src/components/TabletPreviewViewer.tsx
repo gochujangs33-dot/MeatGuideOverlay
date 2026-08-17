@@ -6,8 +6,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   X,
-  Move,
-  Languages
+  Move
 } from 'lucide-react';
 import { SupportedLanguage } from '../types/popup';
 
@@ -49,9 +48,9 @@ export const TabletPreviewViewer: React.FC<Props> = ({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Speech bubble 3-second interval cycle: KO -> EN -> JA -> KO
+  // Speech bubble 3-second interval cycle: KR -> EN -> JA -> KR
   useEffect(() => {
-    if (isOpen) return; // Pause rotation when popup is open
+    if (isOpen) return;
 
     const interval = setInterval(() => {
       setBubbleFade(false); // start fade-out
@@ -244,7 +243,7 @@ export const TabletPreviewViewer: React.FC<Props> = ({
             태블릿 미리보기 뷰어
           </h2>
           <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
-            3초마다 말풍선 언어(한·영·일)가 순환하며, 팝업 상단에서 언어를 선택할 수 있습니다.
+            말풍선 상단에 KR / EN / JA가 표시되며, 팝업 좌측 상단에서 언어를 변경합니다.
           </p>
         </div>
 
@@ -498,7 +497,7 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Floating Pig Mascot Character & Speech Bubble (Visible when popup is closed) */}
+              {/* Floating Pig Mascot Character & Speech Bubble */}
               {!isOpen && (
                 <div
                   onClick={handleOpenPopup}
@@ -513,7 +512,7 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                     zIndex: 20
                   }}
                 >
-                  {/* Speech Bubble with 3-Second Language Cycle & Indicator Badge */}
+                  {/* Speech Bubble: Clean Top "KR/EN/JA" Badge + Bottom Text */}
                   <div style={{
                     backgroundColor: '#FFFFFF',
                     border: '1.5px solid #F48FB1',
@@ -523,20 +522,25 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                     maxWidth: '190px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '4px'
+                    gap: '3px'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    {/* Top: Clean Language Code (KR / EN / JA) */}
+                    <div>
                       <span style={{
-                        fontSize: '9px',
+                        fontSize: '10px',
                         fontWeight: 800,
                         backgroundColor: '#FFF0F5',
                         color: '#E11D48',
-                        padding: '1px 5px',
-                        borderRadius: '4px'
+                        padding: '1px 6px',
+                        borderRadius: '4px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
                       }}>
-                        {bubbleLang === 'ko' ? '🇰🇷 한글' : bubbleLang === 'en' ? '🇺🇸 EN' : '🇯🇵 日本語'} (3초 순환)
+                        {bubbleLang === 'ko' ? 'KR' : bubbleLang === 'en' ? 'EN' : 'JA'}
                       </span>
                     </div>
+
+                    {/* Bottom: Speech Bubble Text Content */}
                     <div style={{
                       fontSize: '11px',
                       fontWeight: 700,
@@ -571,7 +575,7 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                 </div>
               )}
 
-              {/* FULL-SCREEN MODAL POPUP IMAGE VIEWER (Phase 2: Open) */}
+              {/* FULL-SCREEN MODAL POPUP IMAGE VIEWER */}
               {isOpen && (
                 <div
                   onWheel={handleWheel}
@@ -593,7 +597,7 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                     overflow: 'hidden'
                   }}
                 >
-                  {/* TOP HEADER BAR: Multi-Language Selector Tabs + Close Button */}
+                  {/* TOP HEADER BAR: TOP-LEFT Language Buttons + TOP-RIGHT Close Button */}
                   <div style={{
                     position: 'absolute',
                     top: '10px',
@@ -605,7 +609,7 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                     zIndex: 40,
                     pointerEvents: 'auto'
                   }}>
-                    {/* Multi-Language Selector Buttons: [한국어 | English | 日本語] */}
+                    {/* TOP-LEFT: Language Selector Buttons [ 한글 | English | 日本語 ] */}
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -616,9 +620,6 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                       borderRadius: '24px',
                       border: '1px solid rgba(255, 255, 255, 0.2)'
                     }}>
-                      <div style={{ padding: '0 4px 0 8px', display: 'flex', alignItems: 'center' }}>
-                        <Languages size={14} color="#F48FB1" />
-                      </div>
                       {(['ko', 'en', 'ja'] as SupportedLanguage[]).map((lang) => {
                         const labels: Record<SupportedLanguage, string> = {
                           ko: '한글',
@@ -634,7 +635,7 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                               handleSwitchPopupLanguage(lang);
                             }}
                             style={{
-                              padding: '5px 11px',
+                              padding: '5px 12px',
                               borderRadius: '18px',
                               border: 'none',
                               fontSize: '12px',
@@ -652,7 +653,7 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                       })}
                     </div>
 
-                    {/* Top Right Dedicated Close Button */}
+                    {/* TOP-RIGHT: Dedicated Close Button */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

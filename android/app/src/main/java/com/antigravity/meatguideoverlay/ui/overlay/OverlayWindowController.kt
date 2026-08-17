@@ -330,14 +330,16 @@ class OverlayWindowController(
 
                 val popupInfo = popupImageRepository.activePopupState.value
                 currentBubbleLangIndex = (currentBubbleLangIndex + 1) % 3
-                val nextText = when (currentBubbleLangIndex) {
-                    1 -> popupInfo.bubbleTextEn.ifBlank { popupInfo.bubbleText }
-                    2 -> popupInfo.bubbleTextJa.ifBlank { popupInfo.bubbleText }
-                    else -> popupInfo.bubbleTextKo.ifBlank { popupInfo.bubbleText }
+                val (nextLangCode, nextText) = when (currentBubbleLangIndex) {
+                    1 -> Pair("EN", popupInfo.bubbleTextEn.ifBlank { popupInfo.bubbleText })
+                    2 -> Pair("JA", popupInfo.bubbleTextJa.ifBlank { popupInfo.bubbleText })
+                    else -> Pair("KR", popupInfo.bubbleTextKo.ifBlank { popupInfo.bubbleText })
                 }
 
                 mainHandler.post {
                     val tv = floatingBinding?.tvSpeechBubble ?: return@post
+                    val badge = floatingBinding?.tvBubbleLangBadge
+                    badge?.text = nextLangCode
                     tv.animate().alpha(0f).setDuration(150).withEndAction {
                         tv.text = nextText
                         tv.animate().alpha(1f).setDuration(150).start()
