@@ -588,7 +588,7 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                       style={{
                         position: 'absolute',
                         inset: 0,
-                        backgroundColor: 'rgba(0, 0, 0, 0.88)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.9)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -597,23 +597,28 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                         overflow: 'hidden'
                       }}
                     >
-                      {/* LEFT SIDE: Vertical Language Selector Buttons [ 한글 / English / 日本語 ] */}
+                      {/* LEFT SIDE: Ultra-Compact Vertical Mini Language Pills (KR / EN / JA) */}
                       <div style={{
                         position: 'absolute',
-                        left: '12px',
+                        left: '8px',
                         top: '50%',
                         transform: 'translateY(-50%)',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '8px',
+                        gap: '5px',
                         zIndex: 40,
-                        pointerEvents: 'auto'
+                        pointerEvents: 'auto',
+                        backgroundColor: 'rgba(15, 23, 42, 0.65)',
+                        backdropFilter: 'blur(6px)',
+                        padding: '3px',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(255, 255, 255, 0.15)'
                       }}>
                         {(['ko', 'en', 'ja'] as SupportedLanguage[]).map((lang) => {
-                          const labels: Record<SupportedLanguage, { text: string; flag: string }> = {
-                            ko: { text: '한글', flag: '🇰🇷' },
-                            en: { text: 'English', flag: '🇺🇸' },
-                            ja: { text: '日本語', flag: '🇯🇵' }
+                          const labels: Record<SupportedLanguage, string> = {
+                            ko: 'KR',
+                            en: 'EN',
+                            ja: 'JA'
                           };
                           const isActive = popupLang === lang;
                           return (
@@ -624,32 +629,29 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                                 handleSwitchPopupLanguage(lang);
                               }}
                               style={{
+                                width: '32px',
+                                height: '26px',
+                                borderRadius: '7px',
+                                border: 'none',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                backgroundColor: isActive ? '#E11D48' : 'transparent',
+                                color: isActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.7)',
+                                cursor: 'pointer',
+                                transition: 'all 0.12s ease',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '6px',
-                                padding: '8px 14px',
-                                borderRadius: '12px',
-                                border: isActive ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
-                                fontSize: '12px',
-                                fontWeight: 700,
-                                backgroundColor: isActive ? '#E11D48' : 'rgba(15, 23, 42, 0.85)',
-                                color: isActive ? '#FFFFFF' : '#CBD5E1',
-                                backdropFilter: 'blur(8px)',
-                                cursor: 'pointer',
-                                transition: 'all 0.15s ease',
-                                boxShadow: isActive
-                                  ? '0 4px 12px rgba(225, 29, 72, 0.45)'
-                                  : '0 2px 6px rgba(0, 0, 0, 0.3)'
+                                justifyContent: 'center',
+                                padding: 0
                               }}
                             >
-                              <span style={{ fontSize: '13px' }}>{labels[lang].flag}</span>
-                              <span>{labels[lang].text}</span>
+                              {labels[lang]}
                             </button>
                           );
                         })}
                       </div>
 
-                      {/* TOP-RIGHT: Dedicated Close Button */}
+                      {/* TOP-RIGHT: Compact Close Button */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -657,83 +659,81 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                         }}
                         style={{
                           position: 'absolute',
-                          top: '12px',
-                          right: '12px',
-                          backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          top: '8px',
+                          right: '8px',
+                          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
                           color: '#FFFFFF',
-                          borderRadius: '20px',
-                          padding: '6px 14px',
-                          fontSize: '12px',
+                          borderRadius: '14px',
+                          padding: '4px 10px',
+                          fontSize: '11px',
                           fontWeight: 700,
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '4px',
-                          backdropFilter: 'blur(8px)',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                          gap: '3px',
+                          backdropFilter: 'blur(6px)',
                           zIndex: 40,
                           pointerEvents: 'auto'
                         }}
                       >
-                        <X size={14} />
+                        <X size={13} />
                         <span>닫기</span>
                       </button>
 
-                  {/* Zoomable & Pannable Image Container */}
-                  <div
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-                      transformOrigin: 'center center',
-                      transition: isDragging ? 'none' : 'transform 0.1s ease-out',
-                      pointerEvents: 'none',
-                      paddingTop: '36px'
-                    }}
-                  >
-                    <img
-                      src={displayedImageUrl}
-                      alt={`고기 부위 안내 팝업 (${popupLang})`}
-                      style={{
-                        maxWidth: '94%',
-                        maxHeight: '90%',
-                        objectFit: 'contain',
-                        display: 'block'
-                      }}
-                    />
-                  </div>
+                      {/* Zoomable & Pannable Image Container */}
+                      <div
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+                          transformOrigin: 'center center',
+                          transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+                          pointerEvents: 'none'
+                        }}
+                      >
+                        <img
+                          src={displayedImageUrl}
+                          alt={`고기 부위 안내 팝업 (${popupLang})`}
+                          style={{
+                            maxWidth: '90%',
+                            maxHeight: '92%',
+                            objectFit: 'contain',
+                            display: 'block'
+                          }}
+                        />
+                      </div>
 
-                  {/* Bottom Zoom & Drag Guide Bar */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '10px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                    backdropFilter: 'blur(4px)',
-                    color: '#FFFFFF',
-                    padding: '4px 14px',
-                    borderRadius: '20px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    pointerEvents: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Move size={12} />
-                      <span>드래그로 화면 이동</span>
+                      {/* Bottom Zoom & Drag Minimal Indicator */}
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '6px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.55)',
+                        backdropFilter: 'blur(4px)',
+                        color: 'rgba(255, 255, 255, 0.85)',
+                        padding: '2px 10px',
+                        borderRadius: '12px',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        pointerEvents: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <Move size={10} />
+                          <span>드래그 이동</span>
+                        </div>
+                        <span>·</span>
+                        <span>{scale.toFixed(1)}x</span>
+                      </div>
                     </div>
-                    <span>·</span>
-                    <span>배율: {scale.toFixed(1)}x (휠로 확대)</span>
-                  </div>
-                </div>
-              )}
+                  )}
             </div>
           </div>
         </div>
