@@ -16,7 +16,7 @@
         android:layout_gravity="center"
         android:contentDescription="@string/popup_image_desc" />
 
-    <!-- TOP-LEFT: Clean Language Selector Buttons [ 한글 / English / 日本語 ] -->
+    <!-- TOP-LEFT: Vertical Clean Language Selector Buttons [ 한글 / English / 日本語 ] -->
     <LinearLayout
         android:id="@+id/layoutLanguageBar"
         android:layout_width="wrap_content"
@@ -27,8 +27,8 @@
         android:background="@drawable/bg_speech_bubble"
         android:backgroundTint="#A60F172A"
         android:elevation="14dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
         android:padding="3dp">
 
         <TextView
@@ -53,7 +53,7 @@
             android:id="@+id/btnLangEn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="3dp"
+            android:layout_marginTop="3dp"
             android:background="@drawable/bg_speech_bubble"
             android:backgroundTint="#00000000"
             android:clickable="true"
@@ -72,7 +72,7 @@
             android:id="@+id/btnLangJa"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="3dp"
+            android:layout_marginTop="3dp"
             android:background="@drawable/bg_speech_bubble"
             android:backgroundTint="#00000000"
             android:clickable="true"

@@ -597,14 +597,14 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                         overflow: 'hidden'
                       }}
                     >
-                      {/* TOP-LEFT: Compact Horizontal Language Selector Buttons [ 한글 | English | 日本語 ] */}
+                      {/* TOP-LEFT: Compact Vertical Language Selector Buttons [ 한글 / English / 日本語 ] */}
                       <div style={{
                         position: 'absolute',
                         left: '10px',
                         top: '10px',
                         display: 'flex',
-                        flexDirection: 'row',
-                        gap: '4px',
+                        flexDirection: 'column',
+                        gap: '3px',
                         zIndex: 40,
                         pointerEvents: 'auto',
                         backgroundColor: 'rgba(15, 23, 42, 0.7)',
