@@ -63,7 +63,17 @@ class OverlayForegroundService : Service() {
         repository = com.antigravity.meatguideoverlay.data.repository.PopupImageRepository.getInstance(this)
 
         createNotificationChannel()
-        startForeground(NOTIFICATION_ID, createNotification())
+        val notification = createNotification()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            androidx.core.app.ServiceCompat.startForeground(
+                this,
+                NOTIFICATION_ID,
+                notification,
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
 
         // Collect popup updates reactively and update power/sleep schedule
         serviceScope.launch {

@@ -86,13 +86,17 @@ object DevicePowerScheduler {
                     pendingIntent
                 )
             }
-        } catch (e: SecurityException) {
-            Log.w(TAG, "Exact alarm permission denied, fallback to standard alarm: ${e.message}")
-            alarmManager.set(
-                AlarmManager.RTC_WAKEUP,
-                triggerAtMillis,
-                pendingIntent
-            )
+        } catch (e: Exception) {
+            Log.w(TAG, "Exact alarm permission or setting failed, fallback to standard alarm: ${e.message}")
+            try {
+                alarmManager.set(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerAtMillis,
+                    pendingIntent
+                )
+            } catch (ex: Exception) {
+                Log.e(TAG, "Failed setting fallback alarm: ${ex.message}")
+            }
         }
     }
 
