@@ -33,26 +33,9 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:paddingStart="5dp"
-                android:paddingTop="2dp"
+                android:paddingTop="3dp"
                 android:paddingEnd="5dp"
-                android:paddingBottom="2dp">
-
-                <!-- Language Code Header: KR / EN / JA -->
-                <TextView
-                    android:id="@+id/tvBubbleLangBadge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="1dp"
-                    android:background="@drawable/bg_speech_bubble"
-                    android:backgroundTint="#FFF0F5"
-                    android:paddingStart="3dp"
-                    android:paddingTop="0dp"
-                    android:paddingEnd="3dp"
-                    android:paddingBottom="0dp"
-                    android:text="KR"
-                    android:textColor="#E11D48"
-                    android:textSize="6.5sp"
-                    android:textStyle="bold" />
+                android:paddingBottom="3dp">
 
                 <!-- Speech Bubble Text Content -->
                 <TextView
