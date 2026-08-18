@@ -99,6 +99,7 @@ class FirebasePopupDataSource {
                         val autoRebootEnabled = snapshot.getBoolean("autoRebootEnabled") ?: true
                         val autoRebootTime = snapshot.getString("autoRebootTime") ?: "10:00"
                         val screenTimeoutMinutes = snapshot.getLong("screenTimeoutMinutes")?.toInt() ?: 60
+                        val characterPosition = snapshot.getString("characterPosition") ?: "RIGHT_TOP"
 
                         val popupInfo = ActivePopupInfo(
                             imageUrl = imageUrl,
@@ -116,7 +117,8 @@ class FirebasePopupDataSource {
                             bubbleTextJa = bubbleTextJa,
                             autoRebootEnabled = autoRebootEnabled,
                             autoRebootTime = autoRebootTime,
-                            screenTimeoutMinutes = screenTimeoutMinutes
+                            screenTimeoutMinutes = screenTimeoutMinutes,
+                            characterPosition = characterPosition
                         )
                         trySend(popupInfo)
                     } catch (e: Exception) {

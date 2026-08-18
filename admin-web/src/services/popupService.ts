@@ -31,7 +31,8 @@ export const DEFAULT_ACTIVE_POPUP: ActivePopupInfo = {
   bubbleTextJa: 'このお肉がどの部位か気になりますか？',
   autoRebootEnabled: true,
   autoRebootTime: '10:00',
-  screenTimeoutMinutes: 60
+  screenTimeoutMinutes: 60,
+  characterPosition: 'RIGHT_TOP'
 };
 
 /**
@@ -189,6 +190,7 @@ export async function uploadAndApplyMultiLangPopup(
     autoRebootEnabled?: boolean;
     autoRebootTime?: string;
     screenTimeoutMinutes?: number;
+    characterPosition?: 'RIGHT_TOP' | 'LEFT_TOP';
   }
 ): Promise<ActivePopupInfo> {
   const timestamp = Date.now();
@@ -244,7 +246,8 @@ export async function uploadAndApplyMultiLangPopup(
     bubbleTextJa: bubbleTexts.ja.trim() || DEFAULT_ACTIVE_POPUP.bubbleTextJa || 'このお肉がどの部位か気になりますか？',
     autoRebootEnabled: powerSettings?.autoRebootEnabled !== undefined ? powerSettings.autoRebootEnabled : (currentInfo.autoRebootEnabled ?? true),
     autoRebootTime: powerSettings?.autoRebootTime || currentInfo.autoRebootTime || '10:00',
-    screenTimeoutMinutes: powerSettings?.screenTimeoutMinutes !== undefined ? powerSettings.screenTimeoutMinutes : (currentInfo.screenTimeoutMinutes ?? 60)
+    screenTimeoutMinutes: powerSettings?.screenTimeoutMinutes !== undefined ? powerSettings.screenTimeoutMinutes : (currentInfo.screenTimeoutMinutes ?? 60),
+    characterPosition: powerSettings?.characterPosition || currentInfo.characterPosition || 'RIGHT_TOP'
   };
 
   try {

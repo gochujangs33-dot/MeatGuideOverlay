@@ -76,6 +76,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
   const [autoRebootTime, setAutoRebootTime] = useState<string>('10:00');
   const [screenTimeoutMinutes, setScreenTimeoutMinutes] = useState<number>(60);
   const [isCustomTimeout, setIsCustomTimeout] = useState<boolean>(false);
+  const [characterPosition, setCharacterPosition] = useState<'RIGHT_TOP' | 'LEFT_TOP'>('RIGHT_TOP');
 
   // Auto-translation state
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
@@ -105,6 +106,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
       setAutoRebootEnabled(info.autoRebootEnabled !== false);
       setAutoRebootTime(info.autoRebootTime || '10:00');
       setScreenTimeoutMinutes(info.screenTimeoutMinutes ?? 60);
+      setCharacterPosition(info.characterPosition || 'RIGHT_TOP');
       if (info.screenTimeoutMinutes !== undefined && ![0, 15, 30, 60, 120].includes(info.screenTimeoutMinutes)) {
         setIsCustomTimeout(true);
       }
@@ -120,6 +122,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
       setAutoRebootEnabled(info.autoRebootEnabled !== false);
       setAutoRebootTime(info.autoRebootTime || '10:00');
       setScreenTimeoutMinutes(info.screenTimeoutMinutes ?? 60);
+      setCharacterPosition(info.characterPosition || 'RIGHT_TOP');
       if (info.screenTimeoutMinutes !== undefined && ![0, 15, 30, 60, 120].includes(info.screenTimeoutMinutes)) {
         setIsCustomTimeout(true);
       }
@@ -244,7 +247,10 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
     autoRebootTime !== (activePopup.autoRebootTime || '10:00') ||
     screenTimeoutMinutes !== (activePopup.screenTimeoutMinutes ?? 60);
 
-  const hasChanges = hasAnyFileSelected || hasBubbleTextChanged || hasPowerSettingsChanged;
+  const hasCharacterPositionChanged =
+    characterPosition !== (activePopup.characterPosition || 'RIGHT_TOP');
+
+  const hasChanges = hasAnyFileSelected || hasBubbleTextChanged || hasPowerSettingsChanged || hasCharacterPositionChanged;
 
   const handleApplyToTablet = async () => {
     if (!hasChanges) return;
@@ -263,7 +269,8 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
         {
           autoRebootEnabled,
           autoRebootTime,
-          screenTimeoutMinutes
+          screenTimeoutMinutes,
+          characterPosition
         }
       );
 
@@ -808,7 +815,99 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
               )}
             </section>
 
-            {/* 3. Tablet Power & Sleep Schedule Management Card */}
+            {/* 3. Character Placement Position Management Card */}
+            <section style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: '16px',
+              border: '1px solid #E2E8F0',
+              padding: '20px 24px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Sparkles size={18} color="#E11D48" />
+                  <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                    캐릭터 상주 위치 설정 (모든 기기 일괄 적용)
+                  </h2>
+                </div>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  backgroundColor: '#FFF1F2',
+                  color: '#E11D48',
+                  padding: '2px 8px',
+                  borderRadius: '6px'
+                }}>
+                  원클릭 전체 적용
+                </span>
+              </div>
+
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '12px'
+              }}>
+                {/* Option 1: Right Top */}
+                <div
+                  onClick={() => setCharacterPosition('RIGHT_TOP')}
+                  style={{
+                    border: characterPosition === 'RIGHT_TOP' ? '2px solid #E11D48' : '1px solid #E2E8F0',
+                    backgroundColor: characterPosition === 'RIGHT_TOP' ? '#FFF1F2' : '#F8FAFC',
+                    borderRadius: '12px',
+                    padding: '14px 16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: characterPosition === 'RIGHT_TOP' ? '#E11D48' : '#0F172A' }}>
+                      👉 우측 상단 (기본 권장)
+                    </span>
+                    <input
+                      type="radio"
+                      name="charPosition"
+                      checked={characterPosition === 'RIGHT_TOP'}
+                      onChange={() => setCharacterPosition('RIGHT_TOP')}
+                      style={{ accentColor: '#E11D48', cursor: 'pointer' }}
+                    />
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748B', lineHeight: 1.4 }}>
+                    말풍선이 <strong>좌측</strong>으로 펼쳐지며, 캐릭터는 우측 끝에 고정됩니다.
+                  </div>
+                </div>
+
+                {/* Option 2: Left Top */}
+                <div
+                  onClick={() => setCharacterPosition('LEFT_TOP')}
+                  style={{
+                    border: characterPosition === 'LEFT_TOP' ? '2px solid #E11D48' : '1px solid #E2E8F0',
+                    backgroundColor: characterPosition === 'LEFT_TOP' ? '#FFF1F2' : '#F8FAFC',
+                    borderRadius: '12px',
+                    padding: '14px 16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: characterPosition === 'LEFT_TOP' ? '#E11D48' : '#0F172A' }}>
+                      👈 좌측 상단
+                    </span>
+                    <input
+                      type="radio"
+                      name="charPosition"
+                      checked={characterPosition === 'LEFT_TOP'}
+                      onChange={() => setCharacterPosition('LEFT_TOP')}
+                      style={{ accentColor: '#E11D48', cursor: 'pointer' }}
+                    />
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748B', lineHeight: 1.4 }}>
+                    말풍선이 <strong>우측</strong>으로 펼쳐지며, 캐릭터는 좌측 끝에 고정됩니다.
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* 4. Tablet Power & Sleep Schedule Management Card */}
             <section style={{
               backgroundColor: '#FFFFFF',
               borderRadius: '16px',
@@ -1060,6 +1159,12 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748B' }}>캐릭터 상주 위치:</span>
+                  <span style={{ fontWeight: 700, color: '#E11D48' }}>
+                    {activePopup.characterPosition === 'LEFT_TOP' ? '👈 좌측 상단 (말풍선 우측)' : '👉 우측 상단 (말풍선 좌측)'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#64748B' }}>화면 절전 시간:</span>
                   <span style={{ fontWeight: 700, color: '#7C3AED' }}>
                     {activePopup.screenTimeoutMinutes === 0 ? '항상 켜짐' : `${activePopup.screenTimeoutMinutes || 60}분 미사용 시 꺼짐`}
@@ -1079,6 +1184,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
               activeSource={previewSource}
               onSourceChange={setPreviewSource}
               bubbleTexts={bubbleTexts}
+              characterPosition={characterPosition}
             />
           </div>
         </div>

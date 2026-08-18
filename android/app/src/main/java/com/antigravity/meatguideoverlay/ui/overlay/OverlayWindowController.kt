@@ -113,6 +113,7 @@ class OverlayWindowController(
                 mainHandler.post {
                     floatingBinding?.tvSpeechBubble?.text = popupInfo.bubbleText
                     updateScreenTimeout(popupInfo.screenTimeoutMinutes)
+                    applyCharacterPosition(popupInfo.characterPosition)
                 }
             }
         }
@@ -169,17 +170,14 @@ class OverlayWindowController(
             Log.d(TAG, "Floating character attached at ($layoutParams.x, $layoutParams.y)")
 
             scope.launch {
-                val side = preferencesManager.characterSideFlow.first()
-                val targetX = if (side == "LEFT") 16 else screenWidth - 120
+                val currentInfo = popupImageRepository.activePopupState.value
+                val pos = if (currentInfo.characterPosition.isNotBlank()) {
+                    currentInfo.characterPosition
+                } else {
+                    preferencesManager.characterSideFlow.first()
+                }
                 mainHandler.post {
-                    layoutParams.x = targetX
-                    if (isCharacterAttached) {
-                        try {
-                            windowManager.updateViewLayout(binding.root, layoutParams)
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Failed updating initial position: ${e.message}")
-                        }
-                    }
+                    applyCharacterPosition(pos)
                 }
             }
 
@@ -195,6 +193,55 @@ class OverlayWindowController(
             startSpeechBubbleLanguageCycle()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to attach floating character: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Dynamically positions character at RIGHT_TOP or LEFT_TOP.
+     * When RIGHT: bubble is on LEFT [Bubble] [Character].
+     * When LEFT: bubble is on RIGHT [Character] [Bubble].
+     */
+    fun applyCharacterPosition(position: String) {
+        val binding = floatingBinding ?: return
+        val layoutParams = floatingLayoutParams ?: return
+        if (!isCharacterAttached) return
+
+        val isLeft = position.equals("LEFT", ignoreCase = true) || position.equals("LEFT_TOP", ignoreCase = true)
+        val targetSide = if (isLeft) "LEFT" else "RIGHT"
+        val targetX = if (isLeft) 16 else (screenWidth - 120)
+        val targetY = 16
+
+        layoutParams.x = targetX
+        layoutParams.y = targetY
+
+        // Reorder container view hierarchy:
+        // When on RIGHT: bubble on left -> [cardSpeechBubble, btnCharacter]
+        // When on LEFT: bubble on right -> [btnCharacter, cardSpeechBubble]
+        binding.characterBubbleContainer.removeAllViews()
+        if (isLeft) {
+            binding.characterBubbleContainer.addView(binding.btnCharacter)
+            binding.characterBubbleContainer.addView(binding.cardSpeechBubble)
+            (binding.cardSpeechBubble.layoutParams as? android.widget.LinearLayout.LayoutParams)?.apply {
+                marginStart = (2 * context.resources.displayMetrics.density).toInt()
+                marginEnd = 0
+            }
+        } else {
+            binding.characterBubbleContainer.addView(binding.cardSpeechBubble)
+            binding.characterBubbleContainer.addView(binding.btnCharacter)
+            (binding.cardSpeechBubble.layoutParams as? android.widget.LinearLayout.LayoutParams)?.apply {
+                marginStart = 0
+                marginEnd = (2 * context.resources.displayMetrics.density).toInt()
+            }
+        }
+
+        try {
+            windowManager.updateViewLayout(binding.root, layoutParams)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed updating character position: ${e.message}")
+        }
+
+        scope.launch {
+            preferencesManager.saveCharacterSide(targetSide)
         }
     }
 
@@ -299,28 +346,10 @@ class OverlayWindowController(
     ) {
         val currentX = layoutParams.x
         val centerX = screenWidth / 2
-        val targetX = if (currentX + 70 < centerX) 16 else screenWidth - 160
-        val targetSide = if (targetX == 16) "LEFT" else "RIGHT"
+        val isLeft = (currentX + 70 < centerX)
+        val targetPos = if (isLeft) "LEFT_TOP" else "RIGHT_TOP"
 
-        val animator = ValueAnimator.ofInt(currentX, targetX).apply {
-            duration = 200
-            interpolator = DecelerateInterpolator()
-            addUpdateListener { va ->
-                layoutParams.x = va.animatedValue as Int
-                if (isCharacterAttached) {
-                    try {
-                        windowManager.updateViewLayout(binding.root, layoutParams)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error during snap animation: ${e.message}")
-                    }
-                }
-            }
-        }
-        animator.start()
-
-        scope.launch {
-            preferencesManager.saveCharacterSide(targetSide)
-        }
+        applyCharacterPosition(targetPos)
     }
 
     // ==========================================
@@ -388,25 +417,37 @@ class OverlayWindowController(
             binding.btnLangJa.setTextColor(if (lang == "ja") 0xFFFFFFFF.toInt() else 0xFFCBD5E1.toInt())
 
             val imageFile = popupImageRepository.getCurrentImageFile(lang)
-            if (imageFile != null && imageFile.exists()) {
+            var bitmap: Bitmap? = null
+            if (imageFile != null && imageFile.exists() && imageFile.length() > 0L) {
                 try {
-                    val bitmap = decodeSampledBitmapFromFile(imageFile.absolutePath, screenWidth, screenHeight)
-                    if (bitmap != null) {
-                        binding.ivPopupImage.setImageBitmap(bitmap)
-                        binding.tvLoadingHint.visibility = View.GONE
-                    } else {
-                        binding.ivPopupImage.setImageResource(R.drawable.pork_guide_poster)
-                        binding.tvLoadingHint.visibility = View.GONE
-                    }
+                    bitmap = decodeSampledBitmapFromFile(imageFile.absolutePath, screenWidth, screenHeight)
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed decoding image file for $lang: ${e.message}")
-                    binding.ivPopupImage.setImageResource(R.drawable.pork_guide_poster)
-                    binding.tvLoadingHint.visibility = View.GONE
                 }
+            }
+
+            // Fallback directly to assets if file is missing or failed decoding
+            if (bitmap == null) {
+                val assetName = when (lang.lowercase()) {
+                    "en" -> "pork_guide_poster_en.jpg"
+                    "ja" -> "pork_guide_poster_ja.jpg"
+                    else -> "pork_guide_poster_ko.jpg"
+                }
+                try {
+                    context.assets.open(assetName).use { stream ->
+                        bitmap = BitmapFactory.decodeStream(stream)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed loading asset image $assetName: ${e.message}")
+                }
+            }
+
+            if (bitmap != null) {
+                binding.ivPopupImage.setImageBitmap(bitmap)
             } else {
                 binding.ivPopupImage.setImageResource(R.drawable.pork_guide_poster)
-                binding.tvLoadingHint.visibility = View.GONE
             }
+            binding.tvLoadingHint.visibility = View.GONE
             binding.ivPopupImage.resetScaleAndPosition()
         }
 

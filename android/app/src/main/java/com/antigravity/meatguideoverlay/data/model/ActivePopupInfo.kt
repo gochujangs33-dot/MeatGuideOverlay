@@ -55,7 +55,11 @@ data class ActivePopupInfo(
     val autoRebootTime: String = "10:00",
 
     @SerializedName("screenTimeoutMinutes")
-    val screenTimeoutMinutes: Int = 60
+    val screenTimeoutMinutes: Int = 60,
+
+    // Character Placement Position ("RIGHT_TOP" or "LEFT_TOP")
+    @SerializedName("characterPosition")
+    val characterPosition: String = "RIGHT_TOP"
 ) {
     fun getImageUrlFor(lang: String): String {
         return when (lang.lowercase()) {

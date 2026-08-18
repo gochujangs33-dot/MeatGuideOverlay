@@ -49,8 +49,9 @@ class PopupImageRepository(
 
     private fun initializeRepository() {
         externalScope.launch {
-            // 1. Ensure local fallback image is ready
-            val initialImageFile = localDataSource.ensureLocalImageAvailable("ko")
+            // 1. Ensure local fallback images for all 3 languages are ready
+            localDataSource.ensureAllLocalImagesAvailable()
+            val initialImageFile = localDataSource.getCachedImageFile("ko")
             _imageFileState.value = initialImageFile
 
             // 2. Load local metadata

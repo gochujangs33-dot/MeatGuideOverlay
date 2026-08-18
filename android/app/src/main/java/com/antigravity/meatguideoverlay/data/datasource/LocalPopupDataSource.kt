@@ -73,8 +73,17 @@ class LocalPopupDataSource(
     }
 
     /**
+     * Ensures offline images are available for all supported languages (KO, EN, JA).
+     */
+    suspend fun ensureAllLocalImagesAvailable() = withContext(Dispatchers.IO) {
+        listOf("ko", "en", "ja").forEach { lang ->
+            ensureLocalImageAvailable(lang)
+        }
+    }
+
+    /**
      * Ensures an offline image is available for the given language.
-     * Extracts language-specific bundled asset (KO, EN, JA) or falls back if language not cached.
+     * Extracts language-specific bundled asset (KO, EN, JA).
      */
     suspend fun ensureLocalImageAvailable(lang: String = "ko"): File? = withContext(Dispatchers.IO) {
         val targetFile = getCachedImageFile(lang)
@@ -101,16 +110,10 @@ class LocalPopupDataSource(
                     input.copyTo(output)
                 }
             }
-            Log.d(TAG, "Bundled poster image for $lang copied to cache.")
+            Log.d(TAG, "Bundled poster image for $lang copied to cache (${targetFile.length()} bytes).")
             return@withContext targetFile
         } catch (e: Exception) {
             Log.e(TAG, "Failed extracting bundled image for $lang: ${e.message}", e)
-        }
-
-        // Fallback to KO cached file if exists
-        val koFile = getCachedImageFile("ko")
-        if (koFile.exists() && koFile.length() > 0) {
-            return@withContext koFile
         }
 
         null

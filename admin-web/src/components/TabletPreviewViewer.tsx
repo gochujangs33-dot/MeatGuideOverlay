@@ -16,6 +16,7 @@ interface Props {
   activeSource: 'current' | 'selected';
   onSourceChange: (source: 'current' | 'selected') => void;
   bubbleTexts: { ko: string; en: string; ja: string };
+  characterPosition?: 'RIGHT_TOP' | 'LEFT_TOP';
 }
 
 export const TabletPreviewViewer: React.FC<Props> = ({
@@ -23,7 +24,8 @@ export const TabletPreviewViewer: React.FC<Props> = ({
   selectedImages,
   activeSource,
   onSourceChange,
-  bubbleTexts
+  bubbleTexts,
+  characterPosition = 'RIGHT_TOP'
 }) => {
   const [isLandscape, setIsLandscape] = useState<boolean>(true);
   const [aspectRatio, setAspectRatio] = useState<'16:10' | '16:9' | '4:3'>('16:10');
@@ -497,22 +499,24 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Floating Pig Mascot Character & Speech Bubble (Ultra-Miniature, Top-Right positioned) */}
+              {/* Floating Pig Mascot Character & Speech Bubble (Configurable Position: RIGHT_TOP or LEFT_TOP) */}
               {!isOpen && (
                 <div
                   onClick={handleOpenPopup}
                   style={{
                     position: 'absolute',
                     top: '6px',
-                    right: '6px',
+                    right: characterPosition === 'LEFT_TOP' ? 'auto' : '6px',
+                    left: characterPosition === 'LEFT_TOP' ? '6px' : 'auto',
                     display: 'flex',
+                    flexDirection: characterPosition === 'LEFT_TOP' ? 'row-reverse' : 'row',
                     alignItems: 'center',
                     gap: '4px',
                     cursor: 'pointer',
                     zIndex: 20
                   }}
                 >
-                  {/* Ultra-Mini Speech Bubble: Top "KR/EN/JA" Badge + Bottom Text */}
+                  {/* Ultra-Mini Speech Bubble */}
                   <div style={{
                     backgroundColor: '#FFFFFF',
                     border: '0.8px solid #F48FB1',
@@ -524,25 +528,7 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                     flexDirection: 'column',
                     gap: '1px'
                   }}>
-                    {/* Top: Language Code (KR / EN / JA) */}
-                    <div>
-                      <span style={{
-                        fontSize: '6.5px',
-                        fontWeight: 800,
-                        backgroundColor: '#FFF0F5',
-                        color: '#E11D48',
-                        padding: '0px 2.5px',
-                        borderRadius: '2px',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.2px',
-                        display: 'inline-block',
-                        lineHeight: 1.05
-                      }}>
-                        {bubbleLang === 'ko' ? 'KR' : bubbleLang === 'en' ? 'EN' : 'JA'}
-                      </span>
-                    </div>
-
-                    {/* Bottom: Speech Bubble Text Content */}
+                    {/* Speech Bubble Text Content */}
                     <div style={{
                       fontSize: '7.5px',
                       fontWeight: 700,
