@@ -32,6 +32,7 @@ class OverlayForegroundService : Service() {
         const val ACTION_STOP = "com.antigravity.meatguideoverlay.action.STOP"
         const val ACTION_SHOW_CHARACTER = "com.antigravity.meatguideoverlay.action.SHOW_CHAR"
         const val ACTION_HIDE_CHARACTER = "com.antigravity.meatguideoverlay.action.HIDE_CHAR"
+        const val ACTION_REFRESH = "com.antigravity.meatguideoverlay.action.REFRESH"
 
         fun startService(context: Context) {
             val intent = Intent(context, OverlayForegroundService::class.java).apply {
@@ -64,10 +65,16 @@ class OverlayForegroundService : Service() {
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, createNotification())
 
-        // Collect popup updates reactively
+        // Collect popup updates reactively and update power/sleep schedule
         serviceScope.launch {
             repository.activePopupState.collect { info ->
-                Log.d(TAG, "Active popup image updated in service: v${info.version}")
+                Log.d(TAG, "Active popup config updated in service: v${info.version}, autoReboot=${info.autoRebootEnabled} (${info.autoRebootTime}), screenTimeout=${info.screenTimeoutMinutes}m")
+                com.antigravity.meatguideoverlay.util.DevicePowerScheduler.scheduleDailyReboot(
+                    context = applicationContext,
+                    enabled = info.autoRebootEnabled,
+                    timeString = info.autoRebootTime
+                )
+                overlayController.updateScreenTimeout(info.screenTimeoutMinutes)
             }
         }
     }
@@ -82,6 +89,10 @@ class OverlayForegroundService : Service() {
             }
             ACTION_HIDE_CHARACTER -> {
                 overlayController.hideFloatingCharacter()
+            }
+            ACTION_REFRESH -> {
+                Log.i(TAG, "Executing ACTION_REFRESH on OverlayForegroundService")
+                overlayController.refreshServiceAndOverlay()
             }
             ACTION_STOP -> {
                 overlayController.releaseAll()

@@ -28,7 +28,10 @@ export const DEFAULT_ACTIVE_POPUP: ActivePopupInfo = {
   bubbleText: '이 고기가 어떤 부위인지 궁금하신가요?',
   bubbleTextKo: '이 고기가 어떤 부위인지 궁금하신가요?',
   bubbleTextEn: 'Wondering which cut of meat this is?',
-  bubbleTextJa: 'このお肉がどの部位か気になりますか？'
+  bubbleTextJa: 'このお肉がどの部位か気になりますか？',
+  autoRebootEnabled: true,
+  autoRebootTime: '10:00',
+  screenTimeoutMinutes: 60
 };
 
 /**
@@ -181,7 +184,12 @@ export async function uploadAndApplyMultiLangPopup(
   files: { ko: File | null; en: File | null; ja: File | null },
   bubbleTexts: { ko: string; en: string; ja: string },
   currentInfo: ActivePopupInfo,
-  onProgress?: (progressPercent: number) => void
+  onProgress?: (progressPercent: number) => void,
+  powerSettings?: {
+    autoRebootEnabled?: boolean;
+    autoRebootTime?: string;
+    screenTimeoutMinutes?: number;
+  }
 ): Promise<ActivePopupInfo> {
   const timestamp = Date.now();
   let urlKo = currentInfo.imageUrlKo || currentInfo.imageUrl;
@@ -233,7 +241,10 @@ export async function uploadAndApplyMultiLangPopup(
     bubbleText: bubbleTexts.ko.trim() || DEFAULT_ACTIVE_POPUP.bubbleTextKo || '이 고기가 어떤 부위인지 궁금하신가요?',
     bubbleTextKo: bubbleTexts.ko.trim() || DEFAULT_ACTIVE_POPUP.bubbleTextKo || '이 고기가 어떤 부위인지 궁금하신가요?',
     bubbleTextEn: bubbleTexts.en.trim() || DEFAULT_ACTIVE_POPUP.bubbleTextEn || 'Wondering which cut of meat this is?',
-    bubbleTextJa: bubbleTexts.ja.trim() || DEFAULT_ACTIVE_POPUP.bubbleTextJa || 'このお肉がどの部位か気になりますか？'
+    bubbleTextJa: bubbleTexts.ja.trim() || DEFAULT_ACTIVE_POPUP.bubbleTextJa || 'このお肉がどの部位か気になりますか？',
+    autoRebootEnabled: powerSettings?.autoRebootEnabled !== undefined ? powerSettings.autoRebootEnabled : (currentInfo.autoRebootEnabled ?? true),
+    autoRebootTime: powerSettings?.autoRebootTime || currentInfo.autoRebootTime || '10:00',
+    screenTimeoutMinutes: powerSettings?.screenTimeoutMinutes !== undefined ? powerSettings.screenTimeoutMinutes : (currentInfo.screenTimeoutMinutes ?? 60)
   };
 
   try {

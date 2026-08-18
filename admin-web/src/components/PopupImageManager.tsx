@@ -11,7 +11,10 @@ import {
   MessageSquare,
   Globe,
   Languages,
-  Wand2
+  Wand2,
+  Power,
+  Clock,
+  Moon
 } from 'lucide-react';
 import { ActivePopupInfo, SupportedLanguage } from '../types/popup';
 import {
@@ -68,6 +71,12 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
     ja: DEFAULT_ACTIVE_POPUP.bubbleTextJa || 'このお肉がどの部位か気になりますか？'
   });
 
+  // Tablet Power & Screen Timeout Settings
+  const [autoRebootEnabled, setAutoRebootEnabled] = useState<boolean>(true);
+  const [autoRebootTime, setAutoRebootTime] = useState<string>('10:00');
+  const [screenTimeoutMinutes, setScreenTimeoutMinutes] = useState<number>(60);
+  const [isCustomTimeout, setIsCustomTimeout] = useState<boolean>(false);
+
   // Auto-translation state
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const [autoTranslatedFlag, setAutoTranslatedFlag] = useState<boolean>(false);
@@ -93,6 +102,12 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
         en: info.bubbleTextEn || DEFAULT_ACTIVE_POPUP.bubbleTextEn!,
         ja: info.bubbleTextJa || DEFAULT_ACTIVE_POPUP.bubbleTextJa!
       });
+      setAutoRebootEnabled(info.autoRebootEnabled !== false);
+      setAutoRebootTime(info.autoRebootTime || '10:00');
+      setScreenTimeoutMinutes(info.screenTimeoutMinutes ?? 60);
+      if (info.screenTimeoutMinutes !== undefined && ![0, 15, 30, 60, 120].includes(info.screenTimeoutMinutes)) {
+        setIsCustomTimeout(true);
+      }
     }).catch(console.error);
 
     const unsubscribe = subscribeToActivePopup((info) => {
@@ -102,6 +117,12 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
         en: info.bubbleTextEn || DEFAULT_ACTIVE_POPUP.bubbleTextEn!,
         ja: info.bubbleTextJa || DEFAULT_ACTIVE_POPUP.bubbleTextJa!
       });
+      setAutoRebootEnabled(info.autoRebootEnabled !== false);
+      setAutoRebootTime(info.autoRebootTime || '10:00');
+      setScreenTimeoutMinutes(info.screenTimeoutMinutes ?? 60);
+      if (info.screenTimeoutMinutes !== undefined && ![0, 15, 30, 60, 120].includes(info.screenTimeoutMinutes)) {
+        setIsCustomTimeout(true);
+      }
     });
 
     return () => unsubscribe();
@@ -218,7 +239,12 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
     bubbleTexts.en.trim() !== (activePopup.bubbleTextEn || '').trim() ||
     bubbleTexts.ja.trim() !== (activePopup.bubbleTextJa || '').trim();
 
-  const hasChanges = hasAnyFileSelected || hasBubbleTextChanged;
+  const hasPowerSettingsChanged =
+    autoRebootEnabled !== (activePopup.autoRebootEnabled !== false) ||
+    autoRebootTime !== (activePopup.autoRebootTime || '10:00') ||
+    screenTimeoutMinutes !== (activePopup.screenTimeoutMinutes ?? 60);
+
+  const hasChanges = hasAnyFileSelected || hasBubbleTextChanged || hasPowerSettingsChanged;
 
   const handleApplyToTablet = async () => {
     if (!hasChanges) return;
@@ -233,7 +259,12 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
         selectedFiles,
         bubbleTexts,
         activePopup,
-        (progress) => setUploadProgress(progress)
+        (progress) => setUploadProgress(progress),
+        {
+          autoRebootEnabled,
+          autoRebootTime,
+          screenTimeoutMinutes
+        }
       );
 
       setActivePopup(updated);
@@ -243,7 +274,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
         fileInputRef.current.value = '';
       }
 
-      setSuccessMessage(`태블릿 다국어(한·영·일) 적용이 완료되었습니다. (버전 ${updated.version})`);
+      setSuccessMessage(`태블릿 다국어 및 전원/절전 설정 적용이 완료되었습니다. (버전 ${updated.version})`);
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err: any) {
       console.error('Failed to apply popup:', err);
@@ -762,7 +793,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
               {isUploading && (
                 <div style={{ marginTop: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#475569', marginBottom: '6px', fontWeight: 600 }}>
-                    <span>태블릿에 다국어 데이터 전송 중...</span>
+                    <span>태블릿에 데이터 전송 및 설정 적용 중...</span>
                     <span>{uploadProgress}%</span>
                   </div>
                   <div style={{ width: '100%', height: '8px', backgroundColor: '#E2E8F0', borderRadius: '4px', overflow: 'hidden' }}>
@@ -775,15 +806,189 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                   </div>
                 </div>
               )}
+            </section>
+
+            {/* 3. Tablet Power & Sleep Schedule Management Card */}
+            <section style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: '16px',
+              border: '1px solid #E2E8F0',
+              padding: '20px 24px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Power size={18} color="#E11D48" />
+                  <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                    태블릿 전원 및 절전 관리 (모든 기기 일괄 적용)
+                  </h2>
+                </div>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  backgroundColor: '#F1F5F9',
+                  color: '#475569',
+                  padding: '2px 8px',
+                  borderRadius: '6px'
+                }}>
+                  전체 기기 원클릭 동기화
+                </span>
+              </div>
+
+              {/* A. Daily Auto Reboot Schedule */}
+              <div style={{
+                backgroundColor: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                borderRadius: '12px',
+                padding: '14px 16px',
+                marginBottom: '14px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Clock size={16} color="#0284C7" />
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
+                      매일 자동 재부팅 / 리프레시
+                    </span>
+                  </div>
+
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '6px' }}>
+                    <input
+                      type="checkbox"
+                      checked={autoRebootEnabled}
+                      onChange={(e) => setAutoRebootEnabled(e.target.checked)}
+                      style={{ width: '16px', height: '16px', accentColor: '#E11D48', cursor: 'pointer' }}
+                    />
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: autoRebootEnabled ? '#E11D48' : '#64748B' }}>
+                      {autoRebootEnabled ? '사용 중 (ON)' : '사용 안함 (OFF)'}
+                    </span>
+                  </label>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '12px', color: '#475569', fontWeight: 600 }}>재부팅 시각:</span>
+                  <input
+                    type="time"
+                    value={autoRebootTime}
+                    disabled={!autoRebootEnabled}
+                    onChange={(e) => setAutoRebootTime(e.target.value)}
+                    style={{
+                      padding: '5px 10px',
+                      borderRadius: '8px',
+                      border: '1px solid #CBD5E1',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      color: '#0F172A',
+                      backgroundColor: autoRebootEnabled ? '#FFFFFF' : '#F1F5F9',
+                      cursor: autoRebootEnabled ? 'pointer' : 'not-allowed'
+                    }}
+                  />
+                  <span style={{ fontSize: '11px', color: '#64748B' }}>
+                    (매일 지정 시각에 기기 재부팅 및 메모리 최적화 수행)
+                  </span>
+                </div>
+              </div>
+
+              {/* B. Screen Auto Timeout (Sleep mode) */}
+              <div style={{
+                backgroundColor: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                borderRadius: '12px',
+                padding: '14px 16px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <Moon size={16} color="#7C3AED" />
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
+                    화면 자동 꺼짐 (절전 시간)
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#64748B' }}>
+                    (미사용 시 절전, 터치 시 즉시 켜짐)
+                  </span>
+                </div>
+
+                {/* Quick Option Chips */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                  {[
+                    { label: '15분', value: 15 },
+                    { label: '30분', value: 30 },
+                    { label: '1시간 (기본)', value: 60 },
+                    { label: '2시간', value: 120 },
+                    { label: '항상 켜짐 (절전 끄기)', value: 0 }
+                  ].map((option) => {
+                    const isSelected = screenTimeoutMinutes === option.value && !isCustomTimeout;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
+                          setScreenTimeoutMinutes(option.value);
+                          setIsCustomTimeout(false);
+                        }}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          border: isSelected ? '1.5px solid #7C3AED' : '1px solid #CBD5E1',
+                          backgroundColor: isSelected ? '#F5F3FF' : '#FFFFFF',
+                          color: isSelected ? '#7C3AED' : '#475569',
+                          fontSize: '12px',
+                          fontWeight: isSelected ? 800 : 600,
+                          cursor: 'pointer',
+                          transition: 'all 0.12s ease'
+                        }}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomTimeout(true)}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      border: isCustomTimeout ? '1.5px solid #7C3AED' : '1px solid #CBD5E1',
+                      backgroundColor: isCustomTimeout ? '#F5F3FF' : '#FFFFFF',
+                      color: isCustomTimeout ? '#7C3AED' : '#475569',
+                      fontSize: '12px',
+                      fontWeight: isCustomTimeout ? 800 : 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    직접 입력
+                  </button>
+                </div>
+
+                {isCustomTimeout && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+                    <span style={{ fontSize: '12px', color: '#475569' }}>절전 대기 시간:</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="720"
+                      value={screenTimeoutMinutes}
+                      onChange={(e) => setScreenTimeoutMinutes(Math.max(1, parseInt(e.target.value) || 1))}
+                      style={{
+                        width: '80px',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        border: '1px solid #CBD5E1',
+                        fontSize: '12px',
+                        fontWeight: 700
+                      }}
+                    />
+                    <span style={{ fontSize: '12px', color: '#64748B' }}>분 미사용 시 화면 꺼짐</span>
+                  </div>
+                )}
+              </div>
 
               {/* Single Apply Button */}
-              <div style={{ marginTop: '16px' }}>
+              <div style={{ marginTop: '18px' }}>
                 <button
                   onClick={handleApplyToTablet}
                   disabled={!hasChanges || isUploading}
                   style={{
                     width: '100%',
-                    height: '50px',
+                    height: '52px',
                     backgroundColor: !hasChanges || isUploading ? '#CBD5E1' : '#E11D48',
                     color: '#FFFFFF',
                     border: 'none',
@@ -795,7 +1000,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    boxShadow: !hasChanges || isUploading ? 'none' : '0 4px 12px rgba(225, 29, 72, 0.25)',
+                    boxShadow: !hasChanges || isUploading ? 'none' : '0 4px 14px rgba(225, 29, 72, 0.3)',
                     transition: 'all 0.15s ease'
                   }}
                 >
@@ -807,7 +1012,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                   ) : (
                     <>
                       <Sparkles size={18} />
-                      <span>다국어(한·영·일) 태블릿에 적용</span>
+                      <span>다국어 및 태블릿 전원/절전 설정 일괄 적용</span>
                     </>
                   )}
                 </button>
@@ -847,6 +1052,18 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#64748B' }}>등록된 언어:</span>
                   <span style={{ fontWeight: 700, color: '#E11D48' }}>🇰🇷 한국어 · 🇺🇸 English · 🇯🇵 日本語</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748B' }}>매일 자동 재부팅:</span>
+                  <span style={{ fontWeight: 700, color: activePopup.autoRebootEnabled !== false ? '#0284C7' : '#94A3B8' }}>
+                    {activePopup.autoRebootEnabled !== false ? `매일 ${activePopup.autoRebootTime || '10:00'}` : '미사용'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748B' }}>화면 절전 시간:</span>
+                  <span style={{ fontWeight: 700, color: '#7C3AED' }}>
+                    {activePopup.screenTimeoutMinutes === 0 ? '항상 켜짐' : `${activePopup.screenTimeoutMinutes || 60}분 미사용 시 꺼짐`}
+                  </span>
                 </div>
               </div>
             </section>

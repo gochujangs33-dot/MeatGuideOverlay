@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateImageFile } from '../services/popupService';
+import { validateImageFile, DEFAULT_ACTIVE_POPUP } from '../services/popupService';
 
 describe('Popup Image Upload Validation Tests', () => {
   it('should accept valid PNG image file', () => {
@@ -47,5 +47,11 @@ describe('Popup Image Upload Validation Tests', () => {
     const result = validateImageFile(oversizedFile);
     expect(result.valid).toBe(false);
     expect(result.error).toContain('25MB 이하');
+  });
+
+  it('should have default auto reboot time at 10:00 and screen timeout at 60 minutes', () => {
+    expect(DEFAULT_ACTIVE_POPUP.autoRebootEnabled).toBe(true);
+    expect(DEFAULT_ACTIVE_POPUP.autoRebootTime).toBe('10:00');
+    expect(DEFAULT_ACTIVE_POPUP.screenTimeoutMinutes).toBe(60);
   });
 });

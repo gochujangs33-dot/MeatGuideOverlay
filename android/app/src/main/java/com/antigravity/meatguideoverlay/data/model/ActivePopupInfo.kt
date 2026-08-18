@@ -3,8 +3,9 @@ package com.antigravity.meatguideoverlay.data.model
 import com.google.gson.annotations.SerializedName
 
 /**
- * Multi-Language Active Popup Image Manifest.
- * Supports Korean (KO), English (EN), and Japanese (JA) popup posters and speech bubble texts.
+ * Multi-Language Active Popup Image Manifest & Device Schedule Configuration.
+ * Supports Korean (KO), English (EN), and Japanese (JA) popup posters, speech bubble texts,
+ * and remote tablet power/sleep schedule (daily auto-reboot, screen timeout).
  */
 data class ActivePopupInfo(
     @SerializedName("imageUrl")
@@ -44,7 +45,17 @@ data class ActivePopupInfo(
     val bubbleTextEn: String = "Wondering which cut of meat this is?",
 
     @SerializedName("bubbleTextJa")
-    val bubbleTextJa: String = "このお肉がどの部位か気になりますか？"
+    val bubbleTextJa: String = "このお肉がどの部位か気になりますか？",
+
+    // Tablet Power & Sleep Schedule Settings
+    @SerializedName("autoRebootEnabled")
+    val autoRebootEnabled: Boolean = true,
+
+    @SerializedName("autoRebootTime")
+    val autoRebootTime: String = "10:00",
+
+    @SerializedName("screenTimeoutMinutes")
+    val screenTimeoutMinutes: Int = 60
 ) {
     fun getImageUrlFor(lang: String): String {
         return when (lang.lowercase()) {
