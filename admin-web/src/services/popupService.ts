@@ -16,10 +16,10 @@ const COLLECTION_NAME = 'active_popup';
 const DOC_CURRENT = 'current';
 
 export const DEFAULT_ACTIVE_POPUP: ActivePopupInfo = {
-  imageUrl: '/assets/pork_guide_poster.jpg',
-  imageUrlKo: '/assets/pork_guide_poster.jpg',
-  imageUrlEn: '/assets/pork_guide_poster.jpg',
-  imageUrlJa: '/assets/pork_guide_poster.jpg',
+  imageUrl: '/assets/pork_guide_poster_ko.jpg',
+  imageUrlKo: '/assets/pork_guide_poster_ko.jpg',
+  imageUrlEn: '/assets/pork_guide_poster_en.jpg',
+  imageUrlJa: '/assets/pork_guide_poster_ja.jpg',
   version: 1,
   updatedAt: new Date().toISOString(),
   fileName: 'pork_guide_poster.jpg',

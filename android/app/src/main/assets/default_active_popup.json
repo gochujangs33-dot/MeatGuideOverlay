@@ -1,8 +1,18 @@
 {
   "imageUrl": "pork_guide_poster.jpg",
+  "imageUrlKo": "pork_guide_poster_ko.jpg",
+  "imageUrlEn": "pork_guide_poster_en.jpg",
+  "imageUrlJa": "pork_guide_poster_ja.jpg",
   "version": 1,
   "updatedAt": "2026-08-18T00:00:00.000Z",
   "fileName": "pork_guide_poster.jpg",
   "fileSize": 455717,
-  "checksum": "default_v1_pork_guide"
+  "checksum": "default_v1_pork_guide",
+  "bubbleText": "이 고기가 어떤 부위인지 궁금하신가요?",
+  "bubbleTextKo": "이 고기가 어떤 부위인지 궁금하신가요?",
+  "bubbleTextEn": "Wondering which cut of meat this is?",
+  "bubbleTextJa": "このお肉がどの部位か気になりますか？",
+  "autoRebootEnabled": true,
+  "autoRebootTime": "10:00",
+  "screenTimeoutMinutes": 60
 }

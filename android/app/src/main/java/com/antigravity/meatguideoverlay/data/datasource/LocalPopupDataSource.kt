@@ -74,7 +74,7 @@ class LocalPopupDataSource(
 
     /**
      * Ensures an offline image is available for the given language.
-     * Falls back to Korean image or bundled default poster asset if language-specific image not cached.
+     * Extracts language-specific bundled asset (KO, EN, JA) or falls back if language not cached.
      */
     suspend fun ensureLocalImageAvailable(lang: String = "ko"): File? = withContext(Dispatchers.IO) {
         val targetFile = getCachedImageFile(lang)
@@ -82,23 +82,37 @@ class LocalPopupDataSource(
             return@withContext targetFile
         }
 
+        // Try extracting language-specific asset
+        val assetName = when (lang.lowercase()) {
+            "en" -> "pork_guide_poster_en.jpg"
+            "ja" -> "pork_guide_poster_ja.jpg"
+            else -> "pork_guide_poster_ko.jpg"
+        }
+
+        try {
+            val stream = try {
+                context.assets.open(assetName)
+            } catch (e: Exception) {
+                context.assets.open(BUNDLED_DEFAULT_IMAGE)
+            }
+
+            stream.use { input ->
+                FileOutputStream(targetFile).use { output ->
+                    input.copyTo(output)
+                }
+            }
+            Log.d(TAG, "Bundled poster image for $lang copied to cache.")
+            return@withContext targetFile
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed extracting bundled image for $lang: ${e.message}", e)
+        }
+
+        // Fallback to KO cached file if exists
         val koFile = getCachedImageFile("ko")
         if (koFile.exists() && koFile.length() > 0) {
             return@withContext koFile
         }
 
-        // Copy default image from assets to KO cache
-        try {
-            context.assets.open(BUNDLED_DEFAULT_IMAGE).use { input ->
-                FileOutputStream(koFile).use { output ->
-                    input.copyTo(output)
-                }
-            }
-            Log.d(TAG, "Default bundled poster image copied to cache.")
-            return@withContext koFile
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed extracting bundled image: ${e.message}", e)
-        }
         null
     }
 
