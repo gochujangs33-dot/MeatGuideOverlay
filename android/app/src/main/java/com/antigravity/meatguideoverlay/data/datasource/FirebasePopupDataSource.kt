@@ -56,21 +56,39 @@ class FirebasePopupDataSource(
             if (snapshot != null && snapshot.exists()) {
                 try {
                     val imageUrl = snapshot.getString("imageUrl") ?: ""
+                    val imageUrlKo = snapshot.getString("imageUrlKo") ?: imageUrl
+                    val imageUrlEn = snapshot.getString("imageUrlEn") ?: imageUrl
+                    val imageUrlJa = snapshot.getString("imageUrlJa") ?: imageUrl
                     val version = snapshot.getLong("version") ?: 1L
                     val updatedAt = snapshot.getString("updatedAt") ?: ""
                     val fileName = snapshot.getString("fileName") ?: "active_image.jpg"
                     val fileSize = snapshot.getLong("fileSize") ?: 0L
                     val checksum = snapshot.getString("checksum") ?: ""
                     val bubbleText = snapshot.getString("bubbleText") ?: "이 고기가 어떤 부위인지 궁금하신가요?"
+                    val bubbleTextKo = snapshot.getString("bubbleTextKo") ?: bubbleText
+                    val bubbleTextEn = snapshot.getString("bubbleTextEn") ?: "Wondering which cut of meat this is?"
+                    val bubbleTextJa = snapshot.getString("bubbleTextJa") ?: "このお肉がどの部位か気になりますか？"
+                    val autoRebootEnabled = snapshot.getBoolean("autoRebootEnabled") ?: true
+                    val autoRebootTime = snapshot.getString("autoRebootTime") ?: "10:00"
+                    val screenTimeoutMinutes = snapshot.getLong("screenTimeoutMinutes")?.toInt() ?: 60
 
                     val popupInfo = ActivePopupInfo(
                         imageUrl = imageUrl,
+                        imageUrlKo = imageUrlKo,
+                        imageUrlEn = imageUrlEn,
+                        imageUrlJa = imageUrlJa,
                         version = version,
                         updatedAt = updatedAt,
                         fileName = fileName,
                         fileSize = fileSize,
                         checksum = checksum,
-                        bubbleText = bubbleText
+                        bubbleText = bubbleText,
+                        bubbleTextKo = bubbleTextKo,
+                        bubbleTextEn = bubbleTextEn,
+                        bubbleTextJa = bubbleTextJa,
+                        autoRebootEnabled = autoRebootEnabled,
+                        autoRebootTime = autoRebootTime,
+                        screenTimeoutMinutes = screenTimeoutMinutes
                     )
                     trySend(popupInfo)
                 } catch (e: Exception) {

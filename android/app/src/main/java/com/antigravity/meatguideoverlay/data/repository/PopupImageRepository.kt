@@ -70,12 +70,10 @@ class PopupImageRepository(
 
                 val currentInfo = _activePopupState.value
                 if (remoteInfo.version > currentInfo.version) {
-                    Log.d(TAG, "New remote image detected (v${remoteInfo.version}). Starting multi-language downloads...")
+                    Log.d(TAG, "New remote image/config detected (v${remoteInfo.version}). Starting multi-language downloads...")
                     downloadAndApplyRemoteImages(remoteInfo)
-                } else if (remoteInfo.bubbleText != currentInfo.bubbleText ||
-                    remoteInfo.bubbleTextKo != currentInfo.bubbleTextKo ||
-                    remoteInfo.bubbleTextEn != currentInfo.bubbleTextEn ||
-                    remoteInfo.bubbleTextJa != currentInfo.bubbleTextJa) {
+                } else if (remoteInfo != currentInfo) {
+                    Log.d(TAG, "Remote metadata/settings updated without version bump. Applying locally...")
                     localDataSource.saveActivePopupInfo(remoteInfo)
                     _activePopupState.value = remoteInfo
                 }

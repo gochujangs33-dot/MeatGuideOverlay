@@ -23,6 +23,8 @@ admin-web/.vite/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+firebase-debug.log*
+*-debug.log*
 
 # Security & Private Credentials
 local-signing/
