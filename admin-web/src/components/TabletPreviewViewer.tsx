@@ -497,29 +497,29 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Floating Pig Mascot Character & Speech Bubble (Half-size, Top-Right positioned) */}
+              {/* Floating Pig Mascot Character & Speech Bubble (Ultra-Miniature, Top-Right positioned) */}
               {!isOpen && (
                 <div
                   onClick={handleOpenPopup}
                   style={{
                     position: 'absolute',
-                    top: '10px',
-                    right: '10px',
+                    top: '6px',
+                    right: '6px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '5px',
+                    gap: '4px',
                     cursor: 'pointer',
                     zIndex: 20
                   }}
                 >
-                  {/* Half-sized Speech Bubble: Top "KR/EN/JA" Badge + Bottom Text */}
+                  {/* Ultra-Mini Speech Bubble: Top "KR/EN/JA" Badge + Bottom Text */}
                   <div style={{
                     backgroundColor: '#FFFFFF',
-                    border: '1px solid #F48FB1',
-                    borderRadius: '8px',
-                    padding: '4px 7px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-                    maxWidth: '125px',
+                    border: '0.8px solid #F48FB1',
+                    borderRadius: '5px',
+                    padding: '2px 5px',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+                    maxWidth: '85px',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '1px'
@@ -527,16 +527,16 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                     {/* Top: Language Code (KR / EN / JA) */}
                     <div>
                       <span style={{
-                        fontSize: '8px',
+                        fontSize: '6.5px',
                         fontWeight: 800,
                         backgroundColor: '#FFF0F5',
                         color: '#E11D48',
-                        padding: '1px 3px',
-                        borderRadius: '3px',
+                        padding: '0px 2.5px',
+                        borderRadius: '2px',
                         textTransform: 'uppercase',
-                        letterSpacing: '0.3px',
+                        letterSpacing: '0.2px',
                         display: 'inline-block',
-                        lineHeight: 1.1
+                        lineHeight: 1.05
                       }}>
                         {bubbleLang === 'ko' ? 'KR' : bubbleLang === 'en' ? 'EN' : 'JA'}
                       </span>
@@ -544,10 +544,10 @@ export const TabletPreviewViewer: React.FC<Props> = ({
 
                     {/* Bottom: Speech Bubble Text Content */}
                     <div style={{
-                      fontSize: '9px',
+                      fontSize: '7.5px',
                       fontWeight: 700,
                       color: '#0F172A',
-                      lineHeight: 1.2,
+                      lineHeight: 1.15,
                       opacity: bubbleFade ? 1 : 0,
                       transition: 'opacity 0.15s ease-in-out'
                     }}>
@@ -555,23 +555,23 @@ export const TabletPreviewViewer: React.FC<Props> = ({
                     </div>
                   </div>
 
-                  {/* Half-sized Pig Mascot Character Avatar */}
+                  {/* Ultra-Mini Pig Mascot Character Avatar */}
                   <div style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '14px',
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '10px',
                     backgroundColor: '#FFE0B2',
-                    border: '1.5px solid #E11D48',
+                    border: '1px solid #E11D48',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: '0 2px 8px rgba(225, 29, 72, 0.3)',
+                    boxShadow: '0 1px 5px rgba(225, 29, 72, 0.25)',
                     transition: 'transform 0.15s ease'
                   }}>
                     <img
                       src="/assets/char_mascot.svg"
                       alt="돼지 캐릭터 마스코트"
-                      style={{ width: '22px', height: '22px', objectFit: 'contain' }}
+                      style={{ width: '15px', height: '15px', objectFit: 'contain' }}
                     />
                   </div>
                 </div>
