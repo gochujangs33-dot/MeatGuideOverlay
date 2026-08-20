@@ -8,7 +8,6 @@ import android.graphics.BitmapFactory
 import android.graphics.PixelFormat
 import android.graphics.drawable.BitmapDrawable
 import android.os.Build
-import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -41,7 +40,7 @@ import java.io.File
  * 2. Customer taps character or speech bubble.
  * 3. Hides floating character, displays single full-screen zoomable popup image.
  * 4. Customer can pinch-to-zoom (1x~5x) and pan when zoomed.
- * 5. Single finger tap closes popup image, returns to kiosk, and re-shows character.
+ * 5. The explicit close button returns to the kiosk and re-shows the character.
  */
 class OverlayWindowController(
     private val context: Context,
@@ -76,8 +75,6 @@ class OverlayWindowController(
     private var popupBinding: DialogSingleImagePopupBinding? = null
     private var popupLayoutParams: WindowManager.LayoutParams? = null
     private var isPopupAttached = false
-    private var autoCloseTimer: CountDownTimer? = null
-
     // Error Dialog Elements
     private var errorBinding: DialogKioskErrorBinding? = null
     private var isErrorDialogAttached = false
@@ -111,7 +108,7 @@ class OverlayWindowController(
         scope.launch {
             popupImageRepository.activePopupState.collect { popupInfo ->
                 mainHandler.post {
-                    floatingBinding?.tvSpeechBubble?.text = popupInfo.bubbleText
+                    showSpeechBubble()
                     updateScreenTimeout(popupInfo.screenTimeoutMinutes)
                     // Keep the kiosk helper anchored to the requested top-left position.
                     // A remote popup refresh must not move it back to the old right side.
@@ -142,6 +139,7 @@ class OverlayWindowController(
 
         if (isCharacterAttached) {
             floatingBinding?.root?.visibility = View.VISIBLE
+            showSpeechBubble()
             return
         }
 
@@ -171,6 +169,7 @@ class OverlayWindowController(
             isCharacterAttached = true
             Log.d(TAG, "Floating character attached at ($layoutParams.x, $layoutParams.y)")
 
+            showSpeechBubble()
             mainHandler.post {
                 applyCharacterPosition(DEFAULT_CHARACTER_POSITION)
             }
@@ -184,7 +183,6 @@ class OverlayWindowController(
                 openSingleImagePopup()
             }
 
-            startSpeechBubbleLanguageCycle()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to attach floating character: ${e.message}", e)
         }
@@ -257,25 +255,12 @@ class OverlayWindowController(
         }
     }
 
-    private fun scheduleSpeechBubbleHide(binding: OverlayFloatingCharacterBinding) {
-        mainHandler.postDelayed({
-            if (isCharacterAttached) {
-                binding.tvSpeechBubble.animate()
-                    .alpha(0f)
-                    .setDuration(400)
-                    .withEndAction {
-                        binding.tvSpeechBubble.visibility = View.GONE
-                        binding.tvSpeechBubble.alpha = 1f
-                    }.start()
-            }
-        }, 8000)
-    }
-
-    private fun showSpeechBubbleTemporarily() {
+    private fun showSpeechBubble() {
         floatingBinding?.let { binding ->
+            binding.cardSpeechBubble.visibility = View.VISIBLE
             binding.tvSpeechBubble.visibility = View.VISIBLE
             binding.tvSpeechBubble.alpha = 1f
-            scheduleSpeechBubbleHide(binding)
+            binding.tvSpeechBubble.text = context.getString(R.string.default_speech_bubble)
         }
     }
 
@@ -349,35 +334,6 @@ class OverlayWindowController(
     // ==========================================
     // 2. SINGLE POPUP IMAGE MODAL VIEWER
     // ==========================================
-
-    private var bubbleRotationJob: kotlinx.coroutines.Job? = null
-    private var currentBubbleLangIndex = 0
-
-    private fun startSpeechBubbleLanguageCycle() {
-        bubbleRotationJob?.cancel()
-        bubbleRotationJob = scope.launch {
-            while (true) {
-                kotlinx.coroutines.delay(3000L)
-                if (isPopupAttached || floatingBinding == null) continue
-
-                val popupInfo = popupImageRepository.activePopupState.value
-                currentBubbleLangIndex = (currentBubbleLangIndex + 1) % 3
-                val nextText = when (currentBubbleLangIndex) {
-                    1 -> popupInfo.bubbleTextEn.ifBlank { popupInfo.bubbleText }
-                    2 -> popupInfo.bubbleTextJa.ifBlank { popupInfo.bubbleText }
-                    else -> popupInfo.bubbleTextKo.ifBlank { popupInfo.bubbleText }
-                }
-
-                mainHandler.post {
-                    val tv = floatingBinding?.tvSpeechBubble ?: return@post
-                    tv.animate().alpha(0f).setDuration(150).withEndAction {
-                        tv.text = nextText
-                        tv.animate().alpha(1f).setDuration(150).start()
-                    }.start()
-                }
-            }
-        }
-    }
 
     fun openSingleImagePopup() {
         if (!Settings.canDrawOverlays(context)) return
@@ -472,16 +428,7 @@ class OverlayWindowController(
         binding.btnLangEn.setOnClickListener { loadPopupLanguageImage("en") }
         binding.btnLangJa.setOnClickListener { loadPopupLanguageImage("ja") }
 
-        // STRICT SINGLE TAP TO CLOSE
-        binding.ivPopupImage.setOnSingleTapListener {
-            Log.d(TAG, "Single tap confirmed on popup image -> Closing popup.")
-            closeSingleImagePopup()
-        }
-
-        binding.dialogBackdrop.setOnClickListener {
-            closeSingleImagePopup()
-        }
-
+        // The popup can only be dismissed by this explicit close button.
         binding.btnClosePopup.setOnClickListener {
             closeSingleImagePopup()
         }
@@ -492,7 +439,6 @@ class OverlayWindowController(
             hideFloatingCharacter()
             windowManager.addView(binding.root, layoutParams)
             isPopupAttached = true
-            resetAutoCloseTimer()
             Log.d(TAG, "Multi-language popup opened successfully.")
         } catch (e: Exception) {
             showFloatingCharacter()
@@ -503,7 +449,6 @@ class OverlayWindowController(
     fun closeSingleImagePopup() {
         if (!isPopupAttached || popupBinding == null) return
 
-        cancelAutoCloseTimer()
         val view = popupBinding?.root ?: return
         try {
             windowManager.removeViewImmediate(view)
@@ -514,26 +459,8 @@ class OverlayWindowController(
         popupBinding = null
 
         showFloatingCharacter()
-        showSpeechBubbleTemporarily()
+        showSpeechBubble()
         Log.d(TAG, "Single image popup closed.")
-    }
-
-    private fun resetAutoCloseTimer() {
-        autoCloseTimer?.cancel()
-        autoCloseTimer = object : CountDownTimer(60000L, 1000L) {
-            override fun onTick(millisUntilFinished: Long) {}
-            override fun onFinish() {
-                if (isPopupAttached) {
-                    Log.d(TAG, "Auto-close timer elapsed (60s idle). Closing popup.")
-                    closeSingleImagePopup()
-                }
-            }
-        }.start()
-    }
-
-    private fun cancelAutoCloseTimer() {
-        autoCloseTimer?.cancel()
-        autoCloseTimer = null
     }
 
     // ==========================================
@@ -680,9 +607,6 @@ class OverlayWindowController(
         Log.i(TAG, "Refreshing Overlay Service and resetting UI state...")
         mainHandler.post {
             try {
-                if (isPopupAttached) {
-                    closeSingleImagePopup()
-                }
                 if (isScreenSleeping) {
                     wakeScreenFromSleep()
                 }
@@ -698,7 +622,6 @@ class OverlayWindowController(
     fun releaseAll() {
         idleHandler.removeCallbacks(idleRunnable)
         wakeScreenFromSleep()
-        cancelAutoCloseTimer()
         if (isPopupAttached && popupBinding != null) {
             try {
                 windowManager.removeView(popupBinding?.root)
