@@ -16,7 +16,10 @@ service cloud.firestore {
     // Managers can update current active image.
     match /active_popup/{docId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      // The hosted admin console uses an automatic Firebase Anonymous session,
+      // so no email/password prompt is shown. Limit this public-console mode to
+      // the active popup document; drafts, history, and admin records remain protected.
+      allow write: if isAuthenticated();
     }
 
     // Legacy/fallback compatibility

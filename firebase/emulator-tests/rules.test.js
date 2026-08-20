@@ -37,8 +37,8 @@ console.log('✔ Test 3 Passed: Device status can only be modified by matching d
 assert(storageRules.includes('request.resource.size < 25 * 1024 * 1024'), 'Storage must enforce 25MB limit');
 assert(storageRules.includes("request.resource.contentType.matches('image/.*')"), 'Storage must enforce image mime-type');
 assert(storageRules.includes('firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid))'), 'Storage write must require an admins document');
-assert(storageRules.includes('allow write: if isAdmin() && isValidImage()'), 'Storage write must be admin-only');
-console.log('✔ Test 4 Passed: Storage enforces 25MB max size, image type, and admin-only write');
+assert(storageRules.includes('allow write: if request.auth != null && isValidImage()'), 'Storage write must require an authenticated session');
+console.log('✔ Test 4 Passed: Storage enforces 25MB max size, image type, and authenticated-session write');
 
 // Simulated Logic Tests
 const simulateRulesEvaluation = (context) => {
@@ -46,7 +46,10 @@ const simulateRulesEvaluation = (context) => {
   const isAuthenticated = auth !== null;
   const isAdmin = auth?.isAdmin === true;
 
-  if (collection === 'published' || collection === 'active_popup') {
+  if (collection === 'active_popup') {
+    if (action === 'read' || action === 'write') return isAuthenticated;
+  }
+  if (collection === 'published') {
     if (action === 'read') return isAuthenticated;
     if (action === 'write') return isAdmin;
   }

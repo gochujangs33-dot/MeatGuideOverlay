@@ -2,6 +2,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
   getAuth,
   connectAuthEmulator,
+  signInAnonymously,
   signInWithEmailAndPassword,
   onAuthStateChanged,
   User
@@ -47,6 +48,7 @@ export {
   onSnapshot,
   collection,
   getDocs,
+  signInAnonymously,
   signInWithEmailAndPassword,
   onAuthStateChanged
 };

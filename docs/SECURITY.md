@@ -15,9 +15,10 @@
    * Google Play 계정이나 매장 직원 로그인 없이도 Firebase Anonymous Auth를 통해 안전한 임시 인증 토큰을 발급받습니다.
    * `published/current` 문서를 읽을 수 있는 권한만 부여되며, 관리자 데이터(`drafts`, `admins`, `content_history`)에는 접근할 수 없습니다.
    * 기기 상태 보고 시 `devices/{deviceUid}` 문서만 쓰기 가능하며, 다른 기기의 상태 문서는 수정할 수 없습니다.
-2. **관리자 웹 (이메일 인증 & Admin 화이트리스트)**:
-   * Firestore의 `/admins/{uid}` 문서 존재 여부(`isAdmin()`)를 보안 규칙에서 확인하여 권한을 판별합니다.
-   * 콘텐츠 게시, 초안 저장, Storage 이미지 업로드 권한을 독점적으로 갖습니다.
+2. **관리자 웹 (자동 익명 세션)**:
+   * 관리자 주소에 접속하면 Firebase Anonymous Auth 세션이 자동으로 발급되어 이메일/비밀번호 입력 없이 화면에 진입합니다.
+   * 자동 세션은 `active_popup/current` 수정과 Storage 이미지 업로드에만 사용되며, 초안·관리자 목록·콘텐츠 이력은 계속 `isAdmin()`으로 보호됩니다.
+   * 관리자 URL을 알고 있는 사용자는 팝업 설정을 수정할 수 있으므로, 외부 공개 주소로 사용하지 않아야 합니다.
 
 ---
 

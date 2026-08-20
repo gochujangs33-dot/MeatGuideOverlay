@@ -27,7 +27,7 @@ import { autoTranslateKoreanToAll } from '../services/translationService';
 import { TabletPreviewViewer } from './TabletPreviewViewer';
 
 interface Props {
-  onLogout: () => void;
+  onLogout?: () => void;
   userEmail?: string | null;
 }
 
@@ -376,7 +376,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
               {userEmail}
             </span>
           )}
-          <button
+          {onLogout && <button
             onClick={onLogout}
             style={{
               display: 'flex',
@@ -395,7 +395,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
           >
             <LogOut size={16} />
             <span>로그아웃</span>
-          </button>
+          </button>}
         </div>
       </header>
 

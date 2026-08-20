@@ -14,6 +14,8 @@ npm run dev
 
 브라우저에서 `http://localhost:5173` 으로 접속합니다.
 
+운영 배포 주소는 `https://meatguideoverlay.web.app`이며, 접속 시 아이디·비밀번호 없이 자동으로 관리자 화면이 열립니다.
+
 ---
 
 ## 3. 주요 기능 및 메뉴 구성
