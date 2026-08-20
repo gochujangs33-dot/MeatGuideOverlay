@@ -42,29 +42,10 @@ class FirebasePopupDataSource {
         }
     }
 
-    init {
-        ensureAuth()
-    }
-
-    private fun ensureAuth() {
-        try {
-            val a = auth ?: return
-            if (a.currentUser == null) {
-                a.signInAnonymously()
-                    .addOnSuccessListener { Log.d(TAG, "Firebase Anonymous Auth success: ${it.user?.uid}") }
-                    .addOnFailureListener { Log.w(TAG, "Firebase Anonymous Auth failed: ${it.message}") }
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed ensuring anonymous auth: ${e.message}")
-        }
-    }
-
     /**
      * Real-time Flow observing changes to the active popup image in Firestore.
      */
     fun observeActivePopup(): Flow<ActivePopupInfo?> = callbackFlow {
-        ensureAuth()
-
         val db = firestore
         if (db == null) {
             Log.i(TAG, "Firestore not connected. Running in offline/local asset mode.")
@@ -74,8 +55,13 @@ class FirebasePopupDataSource {
 
         val docRef = db.collection(COLLECTION_ACTIVE_POPUP).document(DOC_CURRENT)
 
-        val listener: ListenerRegistration? = try {
-            docRef.addSnapshotListener { snapshot: DocumentSnapshot?, error: FirebaseFirestoreException? ->
+        var listener: ListenerRegistration? = null
+
+        fun attachSnapshotListener() {
+            if (listener != null) return
+
+            listener = try {
+                docRef.addSnapshotListener { snapshot: DocumentSnapshot?, error: FirebaseFirestoreException? ->
                 if (error != null) {
                     Log.w(TAG, "Error listening to active popup: ${error.message}")
                     return@addSnapshotListener
@@ -126,13 +112,38 @@ class FirebasePopupDataSource {
                     }
                 }
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed attaching snapshot listener: ${e.message}")
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed attaching snapshot listener: ${e.message}")
+                null
+            }
+        }
+
+        val firebaseAuth = auth
+        val authStateListener = if (firebaseAuth != null) {
+            FirebaseAuth.AuthStateListener { currentAuth ->
+                if (currentAuth.currentUser != null) {
+                    Log.d(TAG, "Firebase auth ready; attaching active popup listener.")
+                    attachSnapshotListener()
+                }
+            }.also { firebaseAuth.addAuthStateListener(it) }
+        } else {
+            Log.w(TAG, "FirebaseAuth not available. Running in offline/local asset mode.")
             null
+        }
+
+        if (firebaseAuth?.currentUser == null) {
+            firebaseAuth?.signInAnonymously()
+                ?.addOnSuccessListener { Log.d(TAG, "Firebase Anonymous Auth success: ${it.user?.uid}") }
+                ?.addOnFailureListener { Log.w(TAG, "Firebase Anonymous Auth failed: ${it.message}") }
+        } else {
+            attachSnapshotListener()
         }
 
         awaitClose {
             listener?.remove()
+            if (authStateListener != null) {
+                firebaseAuth?.removeAuthStateListener(authStateListener)
+            }
         }
     }
 
