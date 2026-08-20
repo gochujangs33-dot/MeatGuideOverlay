@@ -4,7 +4,7 @@
     android:id="@+id/dialogBackdrop"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#E6000000"
+    android:background="#FF000000"
     android:clickable="true"
     android:focusable="true">
 
@@ -14,6 +14,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center"
+        android:background="#FF000000"
         android:contentDescription="@string/popup_image_desc" />
 
     <!-- TOP-LEFT: Large vertical language selector buttons [ 한글 / English / 日本語 ] -->

@@ -398,10 +398,30 @@ class OverlayWindowController(
             WindowManager.LayoutParams.MATCH_PARENT,
             getOverlayWindowType(),
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
-            PixelFormat.TRANSLUCENT
-        )
+                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            PixelFormat.OPAQUE
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = 0
+            y = 0
+            windowAnimations = 0
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
+        }
         popupLayoutParams = layoutParams
+
+        @Suppress("DEPRECATION")
+        binding.root.systemUiVisibility =
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                    View.SYSTEM_UI_FLAG_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
 
         fun loadPopupLanguageImage(lang: String) {
             val activeColor = android.content.res.ColorStateList.valueOf(0xFFE11D48.toInt())
@@ -473,19 +493,15 @@ class OverlayWindowController(
         }
 
         try {
+            // Hide the floating overlay before the opaque popup is attached so
+            // the two windows never alternate during the first rendered frame.
+            hideFloatingCharacter()
             windowManager.addView(binding.root, layoutParams)
             isPopupAttached = true
-
-            // Temporarily hide character while popup is open
-            hideFloatingCharacter()
-
             resetAutoCloseTimer()
-
-            // Subtle 150ms fade-in animation
-            binding.root.alpha = 0f
-            binding.root.animate().alpha(1f).setDuration(150).start()
             Log.d(TAG, "Multi-language popup opened successfully.")
         } catch (e: Exception) {
+            showFloatingCharacter()
             Log.e(TAG, "Failed showing multi-language popup: ${e.message}", e)
         }
     }
@@ -495,24 +511,17 @@ class OverlayWindowController(
 
         cancelAutoCloseTimer()
         val view = popupBinding?.root ?: return
+        try {
+            windowManager.removeViewImmediate(view)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error removing popup dialog: ${e.message}")
+        }
+        isPopupAttached = false
+        popupBinding = null
 
-        view.animate()
-            .alpha(0f)
-            .setDuration(120)
-            .withEndAction {
-                try {
-                    windowManager.removeView(view)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error removing popup dialog: ${e.message}")
-                }
-                isPopupAttached = false
-                popupBinding = null
-
-                // Re-show floating character
-                showFloatingCharacter()
-                showSpeechBubbleTemporarily()
-                Log.d(TAG, "Single image popup closed.")
-            }.start()
+        showFloatingCharacter()
+        showSpeechBubbleTemporarily()
+        Log.d(TAG, "Single image popup closed.")
     }
 
     private fun resetAutoCloseTimer() {
