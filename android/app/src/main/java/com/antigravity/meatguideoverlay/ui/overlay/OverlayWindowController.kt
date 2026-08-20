@@ -30,7 +30,6 @@ import com.antigravity.meatguideoverlay.util.PreferencesManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -51,6 +50,7 @@ class OverlayWindowController(
 ) {
     companion object {
         private const val TAG = "OverlayWindowController"
+        private const val DEFAULT_CHARACTER_POSITION = "LEFT_TOP"
 
         @Volatile
         private var instance: OverlayWindowController? = null
@@ -113,7 +113,9 @@ class OverlayWindowController(
                 mainHandler.post {
                     floatingBinding?.tvSpeechBubble?.text = popupInfo.bubbleText
                     updateScreenTimeout(popupInfo.screenTimeoutMinutes)
-                    applyCharacterPosition(popupInfo.characterPosition)
+                    // Keep the kiosk helper anchored to the requested top-left position.
+                    // A remote popup refresh must not move it back to the old right side.
+                    applyCharacterPosition(DEFAULT_CHARACTER_POSITION)
                 }
             }
         }
@@ -156,7 +158,7 @@ class OverlayWindowController(
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
         ).apply {
-            gravity = Gravity.TOP or Gravity.END
+            gravity = Gravity.TOP or Gravity.START
             x = 16
             y = initialY
         }
@@ -169,16 +171,8 @@ class OverlayWindowController(
             isCharacterAttached = true
             Log.d(TAG, "Floating character attached at ($layoutParams.x, $layoutParams.y)")
 
-            scope.launch {
-                val currentInfo = popupImageRepository.activePopupState.value
-                val pos = if (currentInfo.characterPosition.isNotBlank()) {
-                    currentInfo.characterPosition
-                } else {
-                    preferencesManager.characterSideFlow.first()
-                }
-                mainHandler.post {
-                    applyCharacterPosition(pos)
-                }
+            mainHandler.post {
+                applyCharacterPosition(DEFAULT_CHARACTER_POSITION)
             }
 
             // Speech bubble click opens single image popup

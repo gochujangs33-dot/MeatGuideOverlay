@@ -44,7 +44,7 @@ class PreferencesManager(private val context: Context) {
         Triple(
             prefs[KEY_CHAR_X] ?: -1,
             prefs[KEY_CHAR_Y] ?: 300,
-            prefs[KEY_CHAR_SIDE] ?: "RIGHT"
+            prefs[KEY_CHAR_SIDE] ?: "LEFT"
         )
     }
 
@@ -61,7 +61,7 @@ class PreferencesManager(private val context: Context) {
     }
 
     val characterSideFlow: Flow<String> = context.dataStore.data.map { prefs ->
-        prefs[KEY_CHAR_SIDE] ?: "RIGHT"
+        prefs[KEY_CHAR_SIDE] ?: "LEFT"
     }
 
     suspend fun setSetupCompleted(completed: Boolean) {
