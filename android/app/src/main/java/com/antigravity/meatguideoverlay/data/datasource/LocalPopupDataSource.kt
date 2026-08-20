@@ -23,7 +23,8 @@ class LocalPopupDataSource(
         private const val TAG = "LocalPopupDataSource"
         private const val METADATA_FILE_NAME = "active_popup.json"
         private const val BUNDLED_DEFAULT_JSON = "default_active_popup.json"
-        private const val BUNDLED_DEFAULT_IMAGE = "pork_guide_poster.jpg"
+        private const val BUNDLED_DEFAULT_IMAGE = "pork_guide_poster_ko_hq.png"
+        private const val IMAGE_CACHE_GENERATION = "hq_v2"
     }
 
     private val metadataFile: File
@@ -38,7 +39,9 @@ class LocalPopupDataSource(
             "ja" -> "ja"
             else -> "ko"
         }
-        return File(context.filesDir, "active_popup_image_$sanitizedLang.jpg")
+        // A generation-specific file name prevents an app update from reusing the
+        // previous 1024px poster cache when a higher-resolution asset is bundled.
+        return File(context.filesDir, "active_popup_image_${IMAGE_CACHE_GENERATION}_$sanitizedLang.png")
     }
 
     suspend fun getActivePopupInfo(): ActivePopupInfo = withContext(Dispatchers.IO) {
@@ -93,9 +96,9 @@ class LocalPopupDataSource(
 
         // Try extracting language-specific asset
         val assetName = when (lang.lowercase()) {
-            "en" -> "pork_guide_poster_en.jpg"
-            "ja" -> "pork_guide_poster_ja.jpg"
-            else -> "pork_guide_poster_ko.jpg"
+            "en" -> "pork_guide_poster_en_hq.png"
+            "ja" -> "pork_guide_poster_ja_hq.png"
+            else -> "pork_guide_poster_ko_hq.png"
         }
 
         try {

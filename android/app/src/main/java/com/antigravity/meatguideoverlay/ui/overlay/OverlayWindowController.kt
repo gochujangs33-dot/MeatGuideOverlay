@@ -342,7 +342,8 @@ class OverlayWindowController(
                     WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN or
+                    WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
             PixelFormat.OPAQUE
         ).apply {
             gravity = Gravity.TOP or Gravity.START
@@ -381,7 +382,13 @@ class OverlayWindowController(
             var bitmap: Bitmap? = null
             if (imageFile != null && imageFile.exists() && imageFile.length() > 0L) {
                 try {
-                    bitmap = decodeSampledBitmapFromFile(imageFile.absolutePath, screenWidth, screenHeight)
+                    // Keep roughly 3x the display resolution in memory so text remains
+                    // crisp while the customer pinch-zooms the poster.
+                    bitmap = decodeSampledBitmapFromFile(
+                        imageFile.absolutePath,
+                        screenWidth * 3,
+                        screenHeight * 3
+                    )
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed decoding image file for $lang: ${e.message}")
                 }
@@ -390,9 +397,9 @@ class OverlayWindowController(
             // Fallback directly to assets if file is missing or failed decoding
             if (bitmap == null) {
                 val assetName = when (lang.lowercase()) {
-                    "en" -> "pork_guide_poster_en.jpg"
-                    "ja" -> "pork_guide_poster_ja.jpg"
-                    else -> "pork_guide_poster_ko.jpg"
+                    "en" -> "pork_guide_poster_en_hq.png"
+                    "ja" -> "pork_guide_poster_ja_hq.png"
+                    else -> "pork_guide_poster_ko_hq.png"
                 }
                 try {
                     context.assets.open(assetName).use { stream ->
@@ -403,8 +410,10 @@ class OverlayWindowController(
                 }
             }
 
-            if (bitmap != null) {
-                binding.ivPopupImage.setImageBitmap(bitmap)
+            val loadedBitmap = bitmap
+            if (loadedBitmap != null) {
+                binding.ivPopupImage.setImageBitmap(loadedBitmap)
+                Log.i(TAG, "Loaded popup bitmap $lang: ${loadedBitmap.width}x${loadedBitmap.height}")
             } else {
                 binding.ivPopupImage.setImageResource(R.drawable.pork_guide_poster)
             }
@@ -599,7 +608,9 @@ class OverlayWindowController(
 
         options.inJustDecodeBounds = false
         options.inSampleSize = inSampleSize
-        options.inPreferredConfig = Bitmap.Config.RGB_565 // Low memory footprint
+        // Preserve full color depth around small glyph edges. Only one poster is
+        // displayed at a time, so the quality gain is worth the larger bitmap.
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888
 
         return BitmapFactory.decodeFile(path, options)
     }

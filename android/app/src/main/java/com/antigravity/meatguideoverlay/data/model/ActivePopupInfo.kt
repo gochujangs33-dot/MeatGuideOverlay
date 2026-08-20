@@ -27,7 +27,7 @@ data class ActivePopupInfo(
     val updatedAt: String = "",
 
     @SerializedName("fileName")
-    val fileName: String = "pork_guide_poster.jpg",
+    val fileName: String = "pork_guide_poster_ko_hq.png",
 
     @SerializedName("fileSize")
     val fileSize: Long = 0L,

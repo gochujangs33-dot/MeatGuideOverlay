@@ -16,15 +16,15 @@ const COLLECTION_NAME = 'active_popup';
 const DOC_CURRENT = 'current';
 
 export const DEFAULT_ACTIVE_POPUP: ActivePopupInfo = {
-  imageUrl: '/assets/pork_guide_poster_ko.jpg',
-  imageUrlKo: '/assets/pork_guide_poster_ko.jpg',
-  imageUrlEn: '/assets/pork_guide_poster_en.jpg',
-  imageUrlJa: '/assets/pork_guide_poster_ja.jpg',
-  version: 1,
+  imageUrl: '/assets/pork_guide_poster_ko_hq.png',
+  imageUrlKo: '/assets/pork_guide_poster_ko_hq.png',
+  imageUrlEn: '/assets/pork_guide_poster_en_hq.png',
+  imageUrlJa: '/assets/pork_guide_poster_ja_hq.png',
+  version: 2,
   updatedAt: new Date().toISOString(),
-  fileName: 'pork_guide_poster.jpg',
-  fileSize: 455717,
-  checksum: 'default_v1_pork_guide',
+  fileName: 'pork_guide_poster_ko_hq.png',
+  fileSize: 5978498,
+  checksum: 'default_hq_v2_pork_guide',
   bubbleText: '이 고기가 어떤 부위인지 궁금하신가요?',
   bubbleTextKo: '이 고기가 어떤 부위인지 궁금하신가요?',
   bubbleTextEn: 'Wondering which cut of meat this is?',

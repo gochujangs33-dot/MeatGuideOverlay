@@ -17,7 +17,7 @@ class ActivePopupInfoTest {
             imageUrl = "https://firebasestorage.googleapis.com/v0/b/app/o/pork.jpg",
             version = 2L,
             updatedAt = "2026-08-18T00:00:00.000Z",
-            fileName = "pork_guide_poster.jpg",
+            fileName = "pork_guide_poster_ko_hq.png",
             fileSize = 455717L,
             checksum = "abc123hash",
             bubbleText = "이 고기가 어떤 부위인지 궁금하신가요?",
@@ -27,7 +27,7 @@ class ActivePopupInfoTest {
         )
         assertTrue(info.isValid())
         assertEquals(2L, info.version)
-        assertEquals("pork_guide_poster.jpg", info.fileName)
+        assertEquals("pork_guide_poster_ko_hq.png", info.fileName)
         assertEquals("이 고기가 어떤 부위인지 궁금하신가요?", info.getBubbleTextFor("ko"))
         assertEquals("Wondering which cut of meat this is?", info.getBubbleTextFor("en"))
         assertEquals("このお肉がどの部位か気になりますか？", info.getBubbleTextFor("ja"))
