@@ -17,7 +17,7 @@
         android:clipChildren="false"
         android:clipToPadding="false">
 
-        <!-- Ultra-Mini Speech Bubble -->
+        <!-- Readable speech bubble for a 10-inch kiosk display -->
         <androidx.cardview.widget.CardView
             android:id="@+id/cardSpeechBubble"
             android:layout_width="wrap_content"
@@ -42,26 +42,26 @@
                     android:id="@+id/tvSpeechBubble"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:maxWidth="90dp"
+                    android:maxWidth="180dp"
                     android:text="@string/default_speech_bubble"
                     android:textColor="@color/text_primary"
-                    android:textSize="7.5sp"
+                    android:textSize="15sp"
                     android:textStyle="bold" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Ultra-Mini Floating Character Button -->
+        <!-- Floating pig character button -->
         <FrameLayout
             android:id="@+id/btnCharacter"
-            android:layout_width="26dp"
-            android:layout_height="26dp"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
             android:clickable="true"
             android:focusable="true">
 
             <ImageView
                 android:id="@+id/ivCharacterIcon"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
                 android:layout_gravity="center"
                 android:contentDescription="@string/app_name"
                 android:src="@drawable/ic_mascot_character" />

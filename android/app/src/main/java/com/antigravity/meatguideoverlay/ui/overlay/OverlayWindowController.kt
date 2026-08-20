@@ -156,8 +156,8 @@ class OverlayWindowController(
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
         ).apply {
-            gravity = Gravity.TOP or Gravity.START
-            x = screenWidth - 120
+            gravity = Gravity.TOP or Gravity.END
+            x = 16
             y = initialY
         }
         floatingLayoutParams = layoutParams
@@ -208,10 +208,10 @@ class OverlayWindowController(
 
         val isLeft = position.equals("LEFT", ignoreCase = true) || position.equals("LEFT_TOP", ignoreCase = true)
         val targetSide = if (isLeft) "LEFT" else "RIGHT"
-        val targetX = if (isLeft) 16 else (screenWidth - 120)
         val targetY = 16
 
-        layoutParams.x = targetX
+        layoutParams.gravity = Gravity.TOP or (if (isLeft) Gravity.START else Gravity.END)
+        layoutParams.x = 16
         layoutParams.y = targetY
 
         // Reorder container view hierarchy:
