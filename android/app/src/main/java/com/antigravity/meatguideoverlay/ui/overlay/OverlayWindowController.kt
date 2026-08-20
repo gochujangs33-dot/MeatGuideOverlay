@@ -83,17 +83,9 @@ class OverlayWindowController(
     private var screenWidth = 1280
     private var screenHeight = 800
 
-    // Screen Sleep & Idle Timeout Management
-    private var screenTimeoutMinutes: Int = 60
-    private val idleHandler = Handler(Looper.getMainLooper())
-    private var isScreenSleeping = false
-    private var sleepOverlayView: View? = null
-    private val idleRunnable = Runnable { enterScreenSleepMode() }
-
     init {
         updateScreenDimensions()
         observeActivePopup()
-        resetIdleTimer()
     }
 
     private fun updateScreenDimensions() {
@@ -526,77 +518,33 @@ class OverlayWindowController(
     }
 
     // ==========================================
-    // 4. SCREEN TIMEOUT & SLEEP MANAGEMENT
+    // 4. ANDROID SYSTEM SCREEN TIMEOUT MANAGEMENT
     // ==========================================
 
     fun updateScreenTimeout(timeoutMinutes: Int) {
-        this.screenTimeoutMinutes = timeoutMinutes
-        Log.d(TAG, "Updated screenTimeoutMinutes: $screenTimeoutMinutes")
-        resetIdleTimer()
-    }
-
-    fun resetIdleTimer() {
-        idleHandler.removeCallbacks(idleRunnable)
-        if (isScreenSleeping) {
-            wakeScreenFromSleep()
+        val timeoutMillis = if (timeoutMinutes <= 0) {
+            Int.MAX_VALUE
+        } else {
+            (timeoutMinutes.toLong() * 60_000L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
         }
-        if (screenTimeoutMinutes > 0) {
-            val timeoutMillis = screenTimeoutMinutes * 60 * 1000L
-            idleHandler.postDelayed(idleRunnable, timeoutMillis)
+
+        if (!Settings.System.canWrite(context)) {
+            Log.w(TAG, "Cannot update system screen timeout: WRITE_SETTINGS access is not granted")
+            return
         }
-    }
 
-    private fun enterScreenSleepMode() {
-        if (isScreenSleeping || screenTimeoutMinutes <= 0) return
-        isScreenSleeping = true
-        Log.i(TAG, "Entering Screen Sleep Mode (No activity for $screenTimeoutMinutes minutes)")
-
-        mainHandler.post {
-            try {
-                if (sleepOverlayView == null) {
-                    val blackView = View(context).apply {
-                        setBackgroundColor(0xFF000000.toInt())
-                        isClickable = true
-                        isFocusable = true
-                        setOnClickListener {
-                            wakeScreenFromSleep()
-                        }
-                    }
-                    val params = WindowManager.LayoutParams(
-                        WindowManager.LayoutParams.MATCH_PARENT,
-                        WindowManager.LayoutParams.MATCH_PARENT,
-                        getOverlayWindowType(),
-                        WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                                WindowManager.LayoutParams.FLAG_FULLSCREEN or
-                                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-                        PixelFormat.OPAQUE
-                    ).apply {
-                        screenBrightness = 0.01f
-                    }
-                    sleepOverlayView = blackView
-                    windowManager.addView(blackView, params)
-                    Log.d(TAG, "Sleep overlay attached to dim/turn off display")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed creating sleep overlay: ${e.message}")
-            }
-        }
-    }
-
-    private fun wakeScreenFromSleep() {
-        if (!isScreenSleeping) return
-        isScreenSleeping = false
-        Log.i(TAG, "Waking up Screen from Sleep Mode")
-
-        mainHandler.post {
-            sleepOverlayView?.let { view ->
-                try {
-                    windowManager.removeView(view)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed removing sleep overlay: ${e.message}")
-                }
-                sleepOverlayView = null
-            }
+        try {
+            val updated = Settings.System.putInt(
+                context.contentResolver,
+                Settings.System.SCREEN_OFF_TIMEOUT,
+                timeoutMillis
+            )
+            Log.i(
+                TAG,
+                "System screen timeout updated: ${if (timeoutMinutes <= 0) "always on" else "$timeoutMinutes minutes"} (success=$updated)"
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed updating system screen timeout: ${e.message}", e)
         }
     }
 
@@ -607,10 +555,6 @@ class OverlayWindowController(
         Log.i(TAG, "Refreshing Overlay Service and resetting UI state...")
         mainHandler.post {
             try {
-                if (isScreenSleeping) {
-                    wakeScreenFromSleep()
-                }
-                resetIdleTimer()
                 System.gc()
                 Log.d(TAG, "Service refresh completed successfully")
             } catch (e: Exception) {
@@ -620,8 +564,6 @@ class OverlayWindowController(
     }
 
     fun releaseAll() {
-        idleHandler.removeCallbacks(idleRunnable)
-        wakeScreenFromSleep()
         if (isPopupAttached && popupBinding != null) {
             try {
                 windowManager.removeView(popupBinding?.root)
