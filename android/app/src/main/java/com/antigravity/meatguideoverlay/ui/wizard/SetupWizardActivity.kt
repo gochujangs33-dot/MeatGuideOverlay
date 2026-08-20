@@ -16,6 +16,7 @@ import com.antigravity.meatguideoverlay.databinding.ActivitySetupWizardBinding
 import com.antigravity.meatguideoverlay.service.OverlayForegroundService
 import com.antigravity.meatguideoverlay.ui.dashboard.StaffDashboardActivity
 import com.antigravity.meatguideoverlay.util.PreferencesManager
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class SetupWizardActivity : AppCompatActivity() {
@@ -32,7 +33,26 @@ class SetupWizardActivity : AppCompatActivity() {
         preferencesManager = PreferencesManager(this)
 
         setupAppSpinner()
+        loadSavedSettings()
         setupListeners()
+    }
+
+    /**
+     * Restore the last saved device settings whenever the wizard is opened.
+     * Without this, DataStore contained the values but the form reset to its
+     * XML defaults, making it appear that saving had failed.
+     */
+    private fun loadSavedSettings() {
+        lifecycleScope.launch {
+            binding.etDeviceName.setText(preferencesManager.deviceNameFlow.first())
+            binding.cbAutoLaunchKiosk.isChecked = preferencesManager.autoLaunchKioskFlow.first()
+
+            val savedKioskPackage = preferencesManager.getSelectedKioskPackage()
+            val savedIndex = installedAppPackages.indexOf(savedKioskPackage)
+            if (savedIndex >= 0) {
+                binding.spinnerKioskApps.setSelection(savedIndex)
+            }
+        }
     }
 
     override fun onResume() {
@@ -122,7 +142,7 @@ class SetupWizardActivity : AppCompatActivity() {
                 // Start Foreground Overlay Service
                 OverlayForegroundService.startService(this@SetupWizardActivity)
 
-                Toast.makeText(this@SetupWizardActivity, "설정이 완료되었습니다!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@SetupWizardActivity, "설정이 저장되었습니다!", Toast.LENGTH_SHORT).show()
 
                 // Navigate to Staff Dashboard
                 startActivity(Intent(this@SetupWizardActivity, StaffDashboardActivity::class.java))

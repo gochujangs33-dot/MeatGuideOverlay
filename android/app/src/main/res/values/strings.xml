@@ -43,7 +43,7 @@
     <string name="btn_save">저장</string>
     <string name="btn_next">다음</string>
     <string name="btn_prev">이전</string>
-    <string name="btn_complete">설정 완료 및 시작</string>
+    <string name="btn_complete">설정 저장 및 시작</string>
     <string name="btn_sync_now">수동 콘텐츠 동기화</string>
     <string name="btn_show_character">캐릭터 화면에 다시 표시</string>
     <string name="btn_test_error_dialog">테스트 오류창 띄우기</string>
