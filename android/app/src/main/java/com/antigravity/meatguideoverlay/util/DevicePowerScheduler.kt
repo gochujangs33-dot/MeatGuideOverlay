@@ -26,6 +26,23 @@ object DevicePowerScheduler {
     private const val REBOOT_ALARM_REQ_CODE = 9921
 
     /**
+     * Returns true only when Android officially allows this app to reboot the
+     * tablet without user interaction. A scheduled soft refresh is not treated
+     * as a hardware reboot capability.
+     */
+    fun canPerformHardwareReboot(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return false
+        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
+            ?: return false
+        return try {
+            dpm.isDeviceOwnerApp(context.packageName)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed checking Device Owner status: ${e.message}")
+            false
+        }
+    }
+
+    /**
      * Schedules or cancels daily reboot based on configuration.
      * @param timeString 24-hour time format, e.g., "10:00"
      */

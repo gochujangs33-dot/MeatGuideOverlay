@@ -84,7 +84,17 @@ class OverlayForegroundService : Service() {
                     enabled = info.autoRebootEnabled,
                     timeString = info.autoRebootTime
                 )
-                overlayController.updateScreenTimeout(info.screenTimeoutMinutes)
+                val hardwareRebootAvailable =
+                    com.antigravity.meatguideoverlay.util.DevicePowerScheduler.canPerformHardwareReboot(applicationContext)
+                val effectiveScreenTimeout = if (hardwareRebootAvailable) {
+                    info.screenTimeoutMinutes
+                } else {
+                    0
+                }
+                if (!hardwareRebootAvailable) {
+                    Log.i(TAG, "Hardware reboot unavailable -> disabling automatic screen-off timeout")
+                }
+                overlayController.updateScreenTimeout(effectiveScreenTimeout)
             }
         }
     }

@@ -98,10 +98,9 @@ class OverlayWindowController(
 
     private fun observeActivePopup() {
         scope.launch {
-            popupImageRepository.activePopupState.collect { popupInfo ->
+            popupImageRepository.activePopupState.collect {
                 mainHandler.post {
                     showSpeechBubble()
-                    updateScreenTimeout(popupInfo.screenTimeoutMinutes)
                     // Keep the kiosk helper anchored to the requested top-left position.
                     // A remote popup refresh must not move it back to the old right side.
                     applyCharacterPosition(DEFAULT_CHARACTER_POSITION)
