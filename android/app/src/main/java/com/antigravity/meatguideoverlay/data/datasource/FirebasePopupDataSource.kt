@@ -137,9 +137,20 @@ class FirebasePopupDataSource {
     }
 
     /**
-     * Downloads image stream from URL.
+     * Downloads image stream from HTTP URL or decodes Base64 Data URL.
      */
     fun downloadImageStream(imageUrl: String): InputStream? {
+        if (imageUrl.startsWith("data:image/", ignoreCase = true)) {
+            return try {
+                val base64Data = imageUrl.substringAfter(",")
+                val bytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+                java.io.ByteArrayInputStream(bytes)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed decoding Base64 image data: ${e.message}")
+                null
+            }
+        }
+
         return try {
             val url = URL(imageUrl)
             val connection = url.openConnection() as HttpURLConnection

@@ -21,6 +21,7 @@
 ## 3. 컬렉션 구조 명세
 
 ```text
+active_popup/current            # 현재 배포 중인 오버레이 이미지 및 태블릿 설정
 published/current               # 현재 배포 중인 전체 콘텐츠 단일 문서
 drafts/current                  # 관리자가 수정 중인 초안 문서
 content_history/{contentVersion} # 과거 게시된 콘텐츠 스냅샷 이력
@@ -33,11 +34,13 @@ devices/{deviceUid}             # 연결된 각 태블릿 기기 상태 모니�
 ## 4. 보안 규칙 (Security Rules)
 
 * **Firestore 보안 규칙 (`firebase/firestore.rules`)**:
-  * 익명 인증된 태블릿: `published/current` 읽기 허용, 자신의 `devices/{deviceUid}` 문서만 쓰기 허용.
+  * 익명 인증된 태블릿: `active_popup/current`, `published/current` 읽기 허용, 자신의 `devices/{deviceUid}` 문서만 쓰기 허용.
   * 관리자 (`admins/{uid}` 등록 계정): `drafts/*`, `published/*`, `content_history/*`, Storage 업로드 등 전권 허용.
 * **Storage 보안 규칙 (`firebase/storage.rules`)**:
   * 태블릿: 에셋 읽기 허용.
-  * 관리자: 3MB 이하 유효 이미지 MIME 타입만 업로드 허용.
+  * 관리자: 25MB 이하 유효 이미지 MIME 타입만 업로드 허용.
+
+관리자 계정은 Authentication에서 이메일/비밀번호 사용자로 만든 다음, 해당 사용자의 UID와 같은 문서 ID로 `admins/{uid}` 문서를 생성해야 합니다. 문서 내용은 비어 있어도 되며, 관리자 화면과 보안 규칙은 문서 존재 여부로 권한을 확인합니다.
 
 ---
 

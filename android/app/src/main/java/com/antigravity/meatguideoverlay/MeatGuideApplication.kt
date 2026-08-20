@@ -23,13 +23,14 @@ class MeatGuideApplication : Application() {
         try {
             if (FirebaseApp.getApps(this).isEmpty()) {
                 val options = FirebaseOptions.Builder()
-                    .setApplicationId("1:100000000000:android:meatguideoverlay")
-                    .setApiKey("AIzaSyMeatGuideOverlayDummyKey1234567890")
-                    .setProjectId("meat-guide-overlay")
-                    .setStorageBucket("meat-guide-overlay.appspot.com")
+                    .setApplicationId("1:503888582753:android:3f40343294f6f58399b220")
+                    .setApiKey("AIzaSyAapxBnikTGEflcsxtytNztuyyGBbTtq2M")
+                    .setProjectId("meatguideoverlay")
+                    .setStorageBucket("meatguideoverlay.firebasestorage.app")
+                    .setGcmSenderId("503888582753")
                     .build()
                 FirebaseApp.initializeApp(this, options)
-                Log.i(TAG, "FirebaseApp initialized with offline fallback options successfully.")
+                Log.i(TAG, "FirebaseApp initialized with meatguideoverlay project successfully.")
             }
         } catch (e: Exception) {
             Log.w(TAG, "Firebase initialization warning: ${e.message}")

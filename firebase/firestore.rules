@@ -6,18 +6,41 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isAdmin() {
+      return isAuthenticated()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
     // Active popup image descriptor:
     // Tablets can read real-time updates anonymously.
     // Managers can update current active image.
     match /active_popup/{docId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
     // Legacy/fallback compatibility
     match /published/{docId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /drafts/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /admins/{adminUid} {
+      allow read, write: if isAdmin();
+    }
+
+    match /content_history/{version} {
+      allow read, write: if isAdmin();
+    }
+
+    match /devices/{deviceUid} {
+      allow read: if isAdmin() || (isAuthenticated() && request.auth.uid == deviceUid);
+      allow create, update: if isAuthenticated() && request.auth.uid == deviceUid;
+      allow delete: if isAdmin();
     }
   }
 }

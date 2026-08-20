@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   AlertCircle,
   X,
-  FileImage,
   RefreshCw,
   Sparkles,
   LogOut,
@@ -59,6 +58,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
 
   // Current active editing language tab in admin upload panel
   const [activeUploadLang, setActiveUploadLang] = useState<SupportedLanguage>('ko');
+  const fileTargetLangRef = useRef<SupportedLanguage>('ko');
 
   // Editable Speech Bubble Texts in 3 languages
   const [bubbleTexts, setBubbleTexts] = useState<{
@@ -204,6 +204,15 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
       ...prev,
       [lang]: file
     }));
+  };
+
+  const openFilePicker = (lang: SupportedLanguage) => {
+    fileTargetLangRef.current = lang;
+    setActiveUploadLang(lang);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -682,6 +691,18 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
 
               {/* Upload Drop Zone for Currently Selected Language */}
               <div style={{ marginBottom: '16px' }}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handleFileSelect(file, fileTargetLangRef.current);
+                    }
+                  }}
+                  style={{ display: 'none' }}
+                />
                 <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '8px', fontWeight: 600 }}>
                   선택된 언어: <strong>{langMetadata[activeUploadLang].flag} {langMetadata[activeUploadLang].label}</strong> ({langMetadata[activeUploadLang].hint})
                 </div>
@@ -691,9 +712,9 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => openFilePicker(activeUploadLang)}
                     style={{
-                      minHeight: '160px',
+                      minHeight: '150px',
                       border: `2px dashed ${isDragging ? '#E11D48' : '#CBD5E1'}`,
                       backgroundColor: isDragging ? '#FFF1F2' : '#FAFAFA',
                       borderRadius: '12px',
@@ -707,18 +728,6 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                       textAlign: 'center'
                     }}
                   >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files.length > 0) {
-                          handleFileSelect(e.target.files[0], activeUploadLang);
-                        }
-                      }}
-                      style={{ display: 'none' }}
-                    />
-
                     <div style={{
                       width: '42px',
                       height: '42px',
@@ -734,66 +743,194 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                     </div>
 
                     <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '2px' }}>
-                      {langMetadata[activeUploadLang].label} 이미지 선택 또는 드래그
+                      {langMetadata[activeUploadLang].label} 이미지 파일 선택 또는 드래그
                     </div>
                     <div style={{ fontSize: '11px', color: '#64748B' }}>
                       PNG, JPG, JPEG, WebP (최대 25MB)
                     </div>
                   </div>
                 ) : (
-                  /* Selected File Box */
+                  /* Selected File Box with Image Thumbnail Preview */
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    borderRadius: '10px',
-                    border: '1px solid #E2E8F0',
-                    backgroundColor: '#FAFAFA',
+                    borderRadius: '12px',
+                    border: '1.5px solid #E11D48',
+                    backgroundColor: '#FFF1F2',
                     overflow: 'hidden'
                   }}>
                     <div style={{
-                      padding: '10px 12px',
-                      backgroundColor: '#FFFFFF',
-                      borderBottom: '1px solid #E2E8F0',
+                      padding: '12px 14px',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between'
+                      justifyContent: 'space-between',
+                      gap: '12px'
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
-                        <FileImage size={16} color="#E11D48" />
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                          {selectedFiles[activeUploadLang]!.name}
-                        </span>
-                        <span style={{ fontSize: '11px', color: '#64748B' }}>
-                          ({formatFileSize(selectedFiles[activeUploadLang]!.size)})
-                        </span>
+                      {/* Image Thumbnail */}
+                      {previewUrls[activeUploadLang] && (
+                        <div style={{
+                          width: '56px',
+                          height: '76px',
+                          borderRadius: '6px',
+                          overflow: 'hidden',
+                          border: '1px solid #FDA4AF',
+                          backgroundColor: '#FFFFFF',
+                          flexShrink: 0
+                        }}>
+                          <img
+                            src={previewUrls[activeUploadLang]!}
+                            alt="선택된 이미지 미리보기"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        </div>
+                      )}
+
+                      <div style={{ flex: 1, overflow: 'hidden' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                          <span style={{
+                            fontSize: '10px',
+                            fontWeight: 800,
+                            backgroundColor: '#E11D48',
+                            color: '#FFFFFF',
+                            padding: '1px 6px',
+                            borderRadius: '4px'
+                          }}>
+                            선택 완료
+                          </span>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                            {selectedFiles[activeUploadLang]!.name}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#64748B' }}>
+                          용량: {formatFileSize(selectedFiles[activeUploadLang]!.size)}
+                        </div>
                       </div>
 
                       <button
                         onClick={() => handleCancelSelection(activeUploadLang)}
                         disabled={isUploading}
                         style={{
-                          background: 'none',
-                          border: 'none',
+                          background: '#FFFFFF',
+                          border: '1px solid #CBD5E1',
                           color: '#64748B',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '2px',
+                          gap: '4px',
                           fontSize: '11px',
-                          fontWeight: 600,
-                          padding: '2px 6px',
-                          borderRadius: '4px'
+                          fontWeight: 700,
+                          padding: '6px 10px',
+                          borderRadius: '6px'
                         }}
                       >
                         <X size={14} />
-                        <span>선택 취소</span>
+                        <span>취소</span>
                       </button>
-                    </div>
-                    <div style={{ padding: '8px 12px', backgroundColor: '#FFFBEB', fontSize: '11px', color: '#B45309' }}>
-                      우측 태블릿 뷰어 상단 <strong>[{langMetadata[activeUploadLang].label}]</strong> 탭을 누르면 선택한 이미지가 미리 표시됩니다.
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* 3-Language Registered Image Overview Grid List */}
+              <div style={{ marginTop: '20px' }}>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '10px' }}>
+                  🖼️ 3개국어 이미지 등록 현황 리스트
+                </div>
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '10px'
+                }}>
+                  {(['ko', 'en', 'ja'] as SupportedLanguage[]).map((lang) => {
+                    const meta = langMetadata[lang];
+                    const hasSelected = !!selectedFiles[lang];
+                    const displayUrl = previewUrls[lang] || currentActiveImages[lang];
+
+                    return (
+                      <div
+                        key={lang}
+                        onClick={() => setActiveUploadLang(lang)}
+                        style={{
+                          border: activeUploadLang === lang ? '2px solid #E11D48' : '1px solid #E2E8F0',
+                          backgroundColor: activeUploadLang === lang ? '#FFF1F2' : '#FFFFFF',
+                          borderRadius: '10px',
+                          padding: '10px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px',
+                          cursor: 'pointer',
+                          transition: 'all 0.12s ease'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A' }}>
+                            {meta.flag} {meta.label}
+                          </span>
+                          <span style={{
+                            fontSize: '9.5px',
+                            fontWeight: 800,
+                            backgroundColor: hasSelected ? '#FEF3C7' : '#ECFDF5',
+                            color: hasSelected ? '#D97706' : '#059669',
+                            padding: '1px 5px',
+                            borderRadius: '4px'
+                          }}>
+                            {hasSelected ? '새 이미지' : '배포 중'}
+                          </span>
+                        </div>
+
+                        {/* Mini Thumbnail Image */}
+                        <div style={{
+                          width: '100%',
+                          height: '95px',
+                          borderRadius: '6px',
+                          overflow: 'hidden',
+                          border: '1px solid #E2E8F0',
+                          backgroundColor: '#F8FAFC',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          {displayUrl ? (
+                            <img
+                              src={displayUrl}
+                              alt={`${meta.label} 포스터`}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            <div style={{ fontSize: '11px', color: '#94A3B8' }}>이미지 없음</div>
+                          )}
+                        </div>
+
+                        {/* File details & Change button */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10.5px' }}>
+                          <span style={{ color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '80px' }}>
+                            {hasSelected ? selectedFiles[lang]!.name : '등록됨'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openFilePicker(lang);
+                            }}
+                            style={{
+                              backgroundColor: activeUploadLang === lang ? '#E11D48' : '#F1F5F9',
+                              color: activeUploadLang === lang ? '#FFFFFF' : '#334155',
+                              border: 'none',
+                              borderRadius: '4px',
+                              padding: '3px 7px',
+                              fontSize: '10px',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {hasSelected ? '교체' : '선택'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Upload Progress Bar */}

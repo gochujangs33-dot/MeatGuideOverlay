@@ -67,7 +67,7 @@ export function validateImageFile(file: File): UploadValidationResult {
 }
 
 /**
- * Helper to upload a single file to Firebase Storage with fallback.
+ * Helper to upload a single file to Firebase Storage.
  */
 async function uploadSingleFile(
   file: File,
@@ -89,7 +89,7 @@ async function uploadSingleFile(
       }
     });
 
-    return await new Promise<string>((resolve) => {
+    return await new Promise<string>((resolve, reject) => {
       uploadTask.on(
         'state_changed',
         (snapshot) => {
@@ -97,22 +97,21 @@ async function uploadSingleFile(
           onProgress?.(progress);
         },
         (error) => {
-          console.warn(`Storage upload error for ${langPrefix}, falling back to local URL:`, error);
-          resolve(URL.createObjectURL(file));
+          reject(error);
         },
         async () => {
           try {
             const url = await getDownloadURL(uploadTask.snapshot.ref);
             resolve(url);
           } catch (err) {
-            resolve(URL.createObjectURL(file));
+            reject(err);
           }
         }
       );
     });
   } catch (e) {
-    console.warn(`Firebase storage exception for ${langPrefix}, using local fallback:`, e);
-    return URL.createObjectURL(file);
+    console.error(`Firebase Storage upload failed for ${langPrefix}:`, e);
+    throw new Error(`[${langPrefix.toUpperCase()}] 이미지 업로드에 실패했습니다. 네트워크와 관리자 권한을 확인한 뒤 다시 시도해 주세요.`);
   }
 }
 
@@ -253,11 +252,11 @@ export async function uploadAndApplyMultiLangPopup(
   try {
     const docRef = doc(firestore, COLLECTION_NAME, DOC_CURRENT);
     await setDoc(docRef, newPopupInfo);
+    onProgress?.(100);
+    console.log('Successfully saved to Firestore active_popup/current version', newVersion);
   } catch (e) {
-    console.warn('Firestore setDoc failed, saving to local cache:', e);
-    try {
-      localStorage.setItem('meatguide_active_popup', JSON.stringify(newPopupInfo));
-    } catch (_) {}
+    console.error('Firestore setDoc failed:', e);
+    throw new Error('설정을 서버에 저장하지 못했습니다. 관리자 권한과 네트워크 연결을 확인한 뒤 다시 시도해 주세요.');
   }
 
   return newPopupInfo;

@@ -14,11 +14,13 @@ assert(fs.existsSync(storageRulesPath), 'storage.rules must exist');
 const firestoreRules = fs.readFileSync(firestoreRulesPath, 'utf8');
 const storageRules = fs.readFileSync(storageRulesPath, 'utf8');
 
-// Test 1: Published content readable by authenticated/anonymous tablets
+// Test 1: Active/published content readable by authenticated tablets
+assert(firestoreRules.includes('match /active_popup/{docId}'), 'Must define rule for /active_popup/{docId}');
 assert(firestoreRules.includes('match /published/{docId}'), 'Must define rule for /published/{docId}');
 assert(firestoreRules.includes('allow read: if isAuthenticated()'), 'Published content must allow read for authenticated users');
 assert(firestoreRules.includes('allow write: if isAdmin()'), 'Published content must allow write ONLY for admins');
-console.log('✔ Test 1 Passed: Published content readable by tablets, writable only by admins');
+assert(firestoreRules.includes('documents/admins/$(request.auth.uid)'), 'Admin access must require an admins document');
+console.log('✔ Test 1 Passed: Active/published content readable by tablets, writable only by registered admins');
 
 // Test 2: Drafts and Admin documents strictly admin-only
 assert(firestoreRules.includes('match /drafts/{docId}'), 'Must protect /drafts/{docId}');
@@ -31,11 +33,12 @@ assert(firestoreRules.includes('match /devices/{deviceUid}'), 'Must define rule 
 assert(firestoreRules.includes('request.auth.uid == deviceUid'), 'Tablet must only write its own device UID');
 console.log('✔ Test 3 Passed: Device status can only be modified by matching deviceUid');
 
-// Test 4: Storage rules validation (3MB size limit & image content-type)
-assert(storageRules.includes('request.resource.size < 3 * 1024 * 1024'), 'Storage must enforce 3MB limit');
+// Test 4: Storage rules validation (25MB size limit & image content-type)
+assert(storageRules.includes('request.resource.size < 25 * 1024 * 1024'), 'Storage must enforce 25MB limit');
 assert(storageRules.includes("request.resource.contentType.matches('image/.*')"), 'Storage must enforce image mime-type');
-assert(storageRules.includes('allow write: if isAdmin()'), 'Storage write must be admin-only');
-console.log('✔ Test 4 Passed: Storage enforces 3MB max size, image type, and admin-only write');
+assert(storageRules.includes('firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid))'), 'Storage write must require an admins document');
+assert(storageRules.includes('allow write: if isAdmin() && isValidImage()'), 'Storage write must be admin-only');
+console.log('✔ Test 4 Passed: Storage enforces 25MB max size, image type, and admin-only write');
 
 // Simulated Logic Tests
 const simulateRulesEvaluation = (context) => {
@@ -43,7 +46,7 @@ const simulateRulesEvaluation = (context) => {
   const isAuthenticated = auth !== null;
   const isAdmin = auth?.isAdmin === true;
 
-  if (collection === 'published') {
+  if (collection === 'published' || collection === 'active_popup') {
     if (action === 'read') return isAuthenticated;
     if (action === 'write') return isAdmin;
   }
