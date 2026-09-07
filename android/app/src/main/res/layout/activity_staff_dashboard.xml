@@ -145,6 +145,24 @@
                             android:text="방금 전 (정상)"
                             android:textColor="@color/text_primary" />
                     </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:layout_width="140dp"
+                            android:layout_height="wrap_content"
+                            android:text="앱 버전:"
+                            android:textColor="@color/text_secondary" />
+                        <TextView
+                            android:id="@+id/tvDashAppVersion"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/brand_primary_dark"
+                            android:textStyle="bold" />
+                    </LinearLayout>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -210,6 +228,15 @@
                     android:layout_marginStart="8dp"
                     android:text="설정 마법사 다시 열기" />
             </LinearLayout>
+
+            <Button
+                android:id="@+id/btnDashCheckUpdate"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginBottom="16dp"
+                android:backgroundTint="@color/brand_primary_dark"
+                android:text="@string/btn_check_update" />
 
         </LinearLayout>
     </ScrollView>

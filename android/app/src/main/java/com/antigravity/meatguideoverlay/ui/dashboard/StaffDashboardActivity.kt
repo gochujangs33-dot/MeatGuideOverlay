@@ -4,8 +4,10 @@ import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.antigravity.meatguideoverlay.BuildConfig
 import com.antigravity.meatguideoverlay.R
 import com.antigravity.meatguideoverlay.data.repository.PopupImageRepository
 import com.antigravity.meatguideoverlay.databinding.ActivityStaffDashboardBinding
@@ -13,6 +15,7 @@ import com.antigravity.meatguideoverlay.service.KioskErrorAccessibilityService
 import com.antigravity.meatguideoverlay.service.OverlayForegroundService
 import com.antigravity.meatguideoverlay.ui.overlay.OverlayWindowController
 import com.antigravity.meatguideoverlay.ui.wizard.SetupWizardActivity
+import com.antigravity.meatguideoverlay.update.AppUpdateManager
 import com.antigravity.meatguideoverlay.util.PreferencesManager
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -25,6 +28,7 @@ class StaffDashboardActivity : AppCompatActivity() {
     private lateinit var binding: ActivityStaffDashboardBinding
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var repository: PopupImageRepository
+    private lateinit var appUpdateManager: AppUpdateManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,6 +37,7 @@ class StaffDashboardActivity : AppCompatActivity() {
 
         preferencesManager = PreferencesManager(this)
         repository = PopupImageRepository.getInstance(this)
+        appUpdateManager = AppUpdateManager(this)
 
         setupListeners()
         observeData()
@@ -65,6 +70,7 @@ class StaffDashboardActivity : AppCompatActivity() {
         binding.tvDashAccessibilityStatus.setTextColor(
             getColor(if (isA11yRunning) R.color.status_success else R.color.status_warning)
         )
+        binding.tvDashAppVersion.text = "v${BuildConfig.VERSION_NAME}"
     }
 
     private fun observeData() {
@@ -114,6 +120,80 @@ class StaffDashboardActivity : AppCompatActivity() {
 
         binding.btnDashReRunWizard.setOnClickListener {
             startActivity(Intent(this, SetupWizardActivity::class.java))
+        }
+
+        binding.btnDashCheckUpdate.setOnClickListener {
+            checkForAppUpdate()
+        }
+    }
+
+    private fun checkForAppUpdate() {
+        binding.btnDashCheckUpdate.isEnabled = false
+        binding.btnDashCheckUpdate.text = "업데이트 확인 중..."
+
+        lifecycleScope.launch {
+            try {
+                val release = appUpdateManager.findAvailableUpdate()
+                if (release == null) {
+                    Toast.makeText(
+                        this@StaffDashboardActivity,
+                        "현재 최신 버전(v${BuildConfig.VERSION_NAME})입니다.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return@launch
+                }
+
+                AlertDialog.Builder(this@StaffDashboardActivity)
+                    .setTitle("새 앱 업데이트")
+                    .setMessage(
+                        "v${release.versionName} 업데이트가 있습니다.\n\n" +
+                            (release.notes.ifBlank { "업데이트 파일을 내려받아 설치합니다." })
+                    )
+                    .setNegativeButton("나중에") { _, _ -> }
+                    .setPositiveButton("다운로드 및 설치") { _, _ ->
+                        downloadAndInstallUpdate(release)
+                    }
+                    .show()
+            } catch (error: Exception) {
+                Toast.makeText(
+                    this@StaffDashboardActivity,
+                    error.message ?: "업데이트 정보를 확인하지 못했습니다.",
+                    Toast.LENGTH_LONG
+                ).show()
+            } finally {
+                binding.btnDashCheckUpdate.isEnabled = true
+                binding.btnDashCheckUpdate.text = getString(R.string.btn_check_update)
+            }
+        }
+    }
+
+    private fun downloadAndInstallUpdate(release: AppUpdateManager.ReleaseManifest) {
+        if (!appUpdateManager.canRequestPackageInstalls()) {
+            Toast.makeText(
+                this,
+                "처음 한 번만 '이 출처 허용'을 켠 뒤 앱 업데이트 버튼을 다시 눌러주세요.",
+                Toast.LENGTH_LONG
+            ).show()
+            appUpdateManager.openUnknownSourcesSettings()
+            return
+        }
+
+        binding.btnDashCheckUpdate.isEnabled = false
+        binding.btnDashCheckUpdate.text = "업데이트 다운로드 중..."
+        lifecycleScope.launch {
+            try {
+                val apkFile = appUpdateManager.downloadAndVerify(release)
+                appUpdateManager.launchInstaller(apkFile)
+            } catch (error: Exception) {
+                Toast.makeText(
+                    this@StaffDashboardActivity,
+                    error.message ?: "업데이트를 내려받지 못했습니다.",
+                    Toast.LENGTH_LONG
+                ).show()
+            } finally {
+                binding.btnDashCheckUpdate.isEnabled = true
+                binding.btnDashCheckUpdate.text = getString(R.string.btn_check_update)
+            }
         }
     }
 }

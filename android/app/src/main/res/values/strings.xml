@@ -47,7 +47,7 @@
     <string name="btn_sync_now">수동 콘텐츠 동기화</string>
     <string name="btn_show_character">캐릭터 화면에 다시 표시</string>
     <string name="btn_test_error_dialog">테스트 오류창 띄우기</string>
-    <string name="btn_check_update">앱 버전 확인</string>
+    <string name="btn_check_update">앱 업데이트 확인</string>
 
     <!-- Status Strings -->
     <string name="status_granted">정상 활성화됨</string>
