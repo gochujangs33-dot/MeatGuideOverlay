@@ -50,6 +50,7 @@ class OverlayWindowController(
     companion object {
         private const val TAG = "OverlayWindowController"
         private const val DEFAULT_CHARACTER_POSITION = "LEFT_TOP"
+        private const val POPUP_AUTO_CLOSE_DELAY_MS = 5 * 60 * 1000L
 
         @Volatile
         private var instance: OverlayWindowController? = null
@@ -75,6 +76,12 @@ class OverlayWindowController(
     private var popupBinding: DialogSingleImagePopupBinding? = null
     private var popupLayoutParams: WindowManager.LayoutParams? = null
     private var isPopupAttached = false
+    private val popupAutoCloseRunnable = Runnable {
+        if (isPopupAttached) {
+            Log.i(TAG, "Popup auto-closed after 5 minutes without touch input")
+            closeSingleImagePopup()
+        }
+    }
     // Error Dialog Elements
     private var errorBinding: DialogKioskErrorBinding? = null
     private var isErrorDialogAttached = false
@@ -421,12 +428,46 @@ class OverlayWindowController(
             binding.ivPopupImage.resetScaleAndPosition()
         }
 
+        // Any touch inside the popup (including image pan/zoom and empty backdrop
+        // areas) keeps the five-minute inactivity countdown alive.
+        fun resetAutoCloseTimer() {
+            resetPopupAutoCloseTimer()
+        }
+
+        binding.root.setOnTouchListener { _, event ->
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                resetAutoCloseTimer()
+            }
+            false
+        }
+        binding.ivPopupImage.setOnTouchListener { _, event ->
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                resetAutoCloseTimer()
+            }
+            false
+        }
+        binding.layoutLanguageBar.setOnTouchListener { _, event ->
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                resetAutoCloseTimer()
+            }
+            false
+        }
+
         // Initially load Korean
         loadPopupLanguageImage("ko")
 
-        binding.btnLangKo.setOnClickListener { loadPopupLanguageImage("ko") }
-        binding.btnLangEn.setOnClickListener { loadPopupLanguageImage("en") }
-        binding.btnLangJa.setOnClickListener { loadPopupLanguageImage("ja") }
+        binding.btnLangKo.setOnClickListener {
+            resetAutoCloseTimer()
+            loadPopupLanguageImage("ko")
+        }
+        binding.btnLangEn.setOnClickListener {
+            resetAutoCloseTimer()
+            loadPopupLanguageImage("en")
+        }
+        binding.btnLangJa.setOnClickListener {
+            resetAutoCloseTimer()
+            loadPopupLanguageImage("ja")
+        }
 
         // The popup can only be dismissed by this explicit close button.
         binding.btnClosePopup.setOnClickListener {
@@ -439,6 +480,7 @@ class OverlayWindowController(
             hideFloatingCharacter()
             windowManager.addView(binding.root, layoutParams)
             isPopupAttached = true
+            resetPopupAutoCloseTimer()
             Log.d(TAG, "Multi-language popup opened successfully.")
         } catch (e: Exception) {
             showFloatingCharacter()
@@ -448,6 +490,8 @@ class OverlayWindowController(
 
     fun closeSingleImagePopup() {
         if (!isPopupAttached || popupBinding == null) return
+
+        cancelPopupAutoCloseTimer()
 
         val view = popupBinding?.root ?: return
         try {
@@ -461,6 +505,17 @@ class OverlayWindowController(
         showFloatingCharacter()
         showSpeechBubble()
         Log.d(TAG, "Single image popup closed.")
+    }
+
+    private fun resetPopupAutoCloseTimer() {
+        mainHandler.removeCallbacks(popupAutoCloseRunnable)
+        if (isPopupAttached) {
+            mainHandler.postDelayed(popupAutoCloseRunnable, POPUP_AUTO_CLOSE_DELAY_MS)
+        }
+    }
+
+    private fun cancelPopupAutoCloseTimer() {
+        mainHandler.removeCallbacks(popupAutoCloseRunnable)
     }
 
     // ==========================================
@@ -572,6 +627,7 @@ class OverlayWindowController(
     }
 
     fun releaseAll() {
+        cancelPopupAutoCloseTimer()
         if (isPopupAttached && popupBinding != null) {
             try {
                 windowManager.removeView(popupBinding?.root)
