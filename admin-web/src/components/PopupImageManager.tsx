@@ -15,7 +15,8 @@ import {
   Clock,
   Moon
 } from 'lucide-react';
-import { ActivePopupInfo, SupportedLanguage } from '../types/popup';
+import { ActivePopupInfo, DeviceStatus, SupportedLanguage } from '../types/popup';
+import { collection, firestore, onSnapshot } from '../services/firebase';
 import {
   fetchActivePopup,
   subscribeToActivePopup,
@@ -33,6 +34,8 @@ interface Props {
 
 export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
   const [activePopup, setActivePopup] = useState<ActivePopupInfo>(DEFAULT_ACTIVE_POPUP);
+  const [deviceStatuses, setDeviceStatuses] = useState<DeviceStatus[]>([]);
+  const expectedAppVersionCode = 17;
 
   // Selected files per language
   const [selectedFiles, setSelectedFiles] = useState<{
@@ -131,6 +134,22 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
       }
     });
 
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      collection(firestore, 'devices'),
+      (snapshot) => {
+        setDeviceStatuses(snapshot.docs.map((device) => ({
+          id: device.id,
+          ...(device.data() as Omit<DeviceStatus, 'id'>)
+        })));
+      },
+      (error) => {
+        console.warn('Failed to load tablet statuses:', error);
+      }
+    );
     return () => unsubscribe();
   }, []);
 
@@ -330,6 +349,28 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
     }
   };
 
+  const formatDeviceLastSeen = (value: unknown) => {
+    if (!value) return '연결 기록 없음';
+    try {
+      const timestamp = value as { toDate?: () => Date };
+      const date = typeof timestamp.toDate === 'function' ? timestamp.toDate() : new Date(String(value));
+      return formatDate(date.toISOString());
+    } catch {
+      return '시간 확인 중';
+    }
+  };
+
+  const isDeviceOnline = (value: unknown) => {
+    if (!value) return false;
+    try {
+      const timestamp = value as { toDate?: () => Date };
+      const date = typeof timestamp.toDate === 'function' ? timestamp.toDate() : new Date(String(value));
+      return Date.now() - date.getTime() < 10 * 60 * 1000;
+    } catch {
+      return false;
+    }
+  };
+
   const currentActiveImages = {
     ko: activePopup.imageUrlKo || activePopup.imageUrl,
     en: activePopup.imageUrlEn || activePopup.imageUrl,
@@ -454,6 +495,64 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
           {/* LEFT COLUMN: Multi-Language Registration & Management Area */}
           {/* ==================================================== */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* 0. Connected Tablet Status */}
+            <section style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: '16px',
+              border: '1px solid #E2E8F0',
+              padding: '20px 24px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div>
+                  <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                    연결된 태블릿 현황
+                  </h2>
+                  <p style={{ fontSize: '11px', color: '#64748B', margin: '4px 0 0' }}>
+                    설정 마법사에서 입력한 테이블 번호와 설치된 앱 버전을 표시합니다.
+                  </p>
+                </div>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#0F766E', backgroundColor: '#F0FDFA', padding: '4px 8px', borderRadius: '6px' }}>
+                  {deviceStatuses.length}대 등록
+                </span>
+              </div>
+
+              {deviceStatuses.length === 0 ? (
+                <div style={{ fontSize: '12px', color: '#94A3B8', backgroundColor: '#F8FAFC', borderRadius: '8px', padding: '12px' }}>
+                  아직 상태를 보고한 태블릿이 없습니다. 태블릿 앱을 실행하고 인터넷에 연결해 주세요.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {[...deviceStatuses]
+                    .sort((a, b) => (a.deviceName || a.id).localeCompare(b.deviceName || b.id, 'ko'))
+                    .map((device) => {
+                      const isLatest = (device.appVersionCode || 0) >= expectedAppVersionCode;
+                      const online = isDeviceOnline(device.lastSeen);
+                      return (
+                        <div key={device.id} style={{ border: '1px solid #E2E8F0', borderRadius: '10px', padding: '10px 12px', backgroundColor: '#F8FAFC' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>
+                              {device.deviceName || '이름 미지정 태블릿'}
+                            </span>
+                            <span style={{ fontSize: '11px', fontWeight: 800, color: isLatest ? '#059669' : '#DC2626' }}>
+                              {isLatest ? '최신 앱' : '업데이트 필요'}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '5px', fontSize: '11px', color: '#64748B' }}>
+                            <span>앱 v{device.appVersionName || '확인 중'}</span>
+                            <span>콘텐츠 v{device.contentVersion ?? '-'}</span>
+                            <span style={{ color: online ? '#059669' : '#94A3B8' }}>{online ? '온라인' : '오프라인'}</span>
+                          </div>
+                          <div style={{ marginTop: '4px', fontSize: '10px', color: '#94A3B8' }}>
+                            {device.model || '모델 확인 중'} · 마지막 보고 {formatDeviceLastSeen(device.lastSeen)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            </section>
+
             {/* 1. Speech Bubble Text Multi-Language Auto-Translation Card */}
             <section style={{
               backgroundColor: '#FFFFFF',

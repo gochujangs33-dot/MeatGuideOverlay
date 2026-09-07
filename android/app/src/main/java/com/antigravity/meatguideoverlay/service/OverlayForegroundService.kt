@@ -14,6 +14,7 @@ import androidx.core.app.NotificationCompat
 import com.antigravity.meatguideoverlay.MainActivity
 import com.antigravity.meatguideoverlay.R
 import com.antigravity.meatguideoverlay.data.repository.PopupImageRepository
+import com.antigravity.meatguideoverlay.data.datasource.DeviceStatusReporter
 import com.antigravity.meatguideoverlay.ui.overlay.OverlayWindowController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -56,11 +57,13 @@ class OverlayForegroundService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private lateinit var overlayController: OverlayWindowController
     private lateinit var repository: com.antigravity.meatguideoverlay.data.repository.PopupImageRepository
+    private lateinit var deviceStatusReporter: DeviceStatusReporter
 
     override fun onCreate() {
         super.onCreate()
         overlayController = OverlayWindowController.getInstance(this)
         repository = com.antigravity.meatguideoverlay.data.repository.PopupImageRepository.getInstance(this)
+        deviceStatusReporter = DeviceStatusReporter(this)
 
         createNotificationChannel()
         val notification = createNotification()
@@ -79,6 +82,7 @@ class OverlayForegroundService : Service() {
         serviceScope.launch {
             repository.activePopupState.collect { info ->
                 Log.d(TAG, "Active popup config updated in service: v${info.version}, autoReboot=${info.autoRebootEnabled} (${info.autoRebootTime}), screenTimeout=${info.screenTimeoutMinutes}m, popupAutoClose=${info.popupAutoCloseMinutes}m")
+                deviceStatusReporter.report(info.version)
                 com.antigravity.meatguideoverlay.util.DevicePowerScheduler.scheduleDailyReboot(
                     context = applicationContext,
                     enabled = info.autoRebootEnabled,

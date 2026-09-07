@@ -21,6 +21,19 @@ export interface ActivePopupInfo {
   characterPosition?: 'RIGHT_TOP' | 'LEFT_TOP'; // Default: "RIGHT_TOP"
 }
 
+export interface DeviceStatus {
+  id: string;
+  deviceUid?: string;
+  deviceName?: string;
+  appVersionCode?: number;
+  appVersionName?: string;
+  contentVersion?: number;
+  model?: string;
+  androidVersion?: string;
+  serviceState?: string;
+  lastSeen?: unknown;
+}
+
 export interface UploadValidationResult {
   valid: boolean;
   error?: string;
