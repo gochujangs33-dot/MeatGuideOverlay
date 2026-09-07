@@ -75,6 +75,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
   const [autoRebootEnabled, setAutoRebootEnabled] = useState<boolean>(true);
   const [autoRebootTime, setAutoRebootTime] = useState<string>('10:00');
   const [screenTimeoutMinutes, setScreenTimeoutMinutes] = useState<number>(60);
+  const [popupAutoCloseMinutes, setPopupAutoCloseMinutes] = useState<number>(5);
   const [isCustomTimeout, setIsCustomTimeout] = useState<boolean>(false);
   const [characterPosition, setCharacterPosition] = useState<'RIGHT_TOP' | 'LEFT_TOP'>('RIGHT_TOP');
 
@@ -106,6 +107,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
       setAutoRebootEnabled(info.autoRebootEnabled !== false);
       setAutoRebootTime(info.autoRebootTime || '10:00');
       setScreenTimeoutMinutes(info.screenTimeoutMinutes ?? 60);
+      setPopupAutoCloseMinutes(Math.max(0, Math.min(720, info.popupAutoCloseMinutes ?? 5)));
       setCharacterPosition(info.characterPosition || 'RIGHT_TOP');
       if (info.screenTimeoutMinutes !== undefined && ![0, 15, 30, 60, 120].includes(info.screenTimeoutMinutes)) {
         setIsCustomTimeout(true);
@@ -122,6 +124,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
       setAutoRebootEnabled(info.autoRebootEnabled !== false);
       setAutoRebootTime(info.autoRebootTime || '10:00');
       setScreenTimeoutMinutes(info.screenTimeoutMinutes ?? 60);
+      setPopupAutoCloseMinutes(Math.max(0, Math.min(720, info.popupAutoCloseMinutes ?? 5)));
       setCharacterPosition(info.characterPosition || 'RIGHT_TOP');
       if (info.screenTimeoutMinutes !== undefined && ![0, 15, 30, 60, 120].includes(info.screenTimeoutMinutes)) {
         setIsCustomTimeout(true);
@@ -254,7 +257,8 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
   const hasPowerSettingsChanged =
     autoRebootEnabled !== (activePopup.autoRebootEnabled !== false) ||
     autoRebootTime !== (activePopup.autoRebootTime || '10:00') ||
-    screenTimeoutMinutes !== (activePopup.screenTimeoutMinutes ?? 60);
+    screenTimeoutMinutes !== (activePopup.screenTimeoutMinutes ?? 60) ||
+    popupAutoCloseMinutes !== (activePopup.popupAutoCloseMinutes ?? 5);
 
   const hasCharacterPositionChanged =
     characterPosition !== (activePopup.characterPosition || 'RIGHT_TOP');
@@ -279,6 +283,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
           autoRebootEnabled,
           autoRebootTime,
           screenTimeoutMinutes,
+          popupAutoCloseMinutes,
           characterPosition
         }
       );
@@ -1217,6 +1222,77 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                 )}
               </div>
 
+              {/* C. Popup Inactivity Auto-Close */}
+              <div style={{
+                backgroundColor: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                borderRadius: '12px',
+                padding: '14px 16px',
+                marginTop: '14px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <Clock size={16} color="#0F766E" />
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
+                    팝업 무터치 자동 닫힘
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#64748B' }}>
+                    (팝업을 연 뒤 터치가 없으면 자동 닫힘)
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                  {[
+                    { label: '1분', value: 1 },
+                    { label: '5분 (기본)', value: 5 },
+                    { label: '10분', value: 10 },
+                    { label: '30분', value: 30 },
+                    { label: '1시간', value: 60 },
+                    { label: '사용 안 함', value: 0 }
+                  ].map((option) => {
+                    const isSelected = popupAutoCloseMinutes === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setPopupAutoCloseMinutes(option.value)}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          border: isSelected ? '1.5px solid #0F766E' : '1px solid #CBD5E1',
+                          backgroundColor: isSelected ? '#F0FDFA' : '#FFFFFF',
+                          color: isSelected ? '#0F766E' : '#475569',
+                          fontSize: '12px',
+                          fontWeight: isSelected ? 800 : 600,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+                  <span style={{ fontSize: '12px', color: '#475569' }}>직접 입력:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="720"
+                    value={popupAutoCloseMinutes}
+                    onChange={(e) => setPopupAutoCloseMinutes(Math.max(0, Math.min(720, parseInt(e.target.value) || 0)))}
+                    style={{
+                      width: '80px',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      border: '1px solid #CBD5E1',
+                      fontSize: '12px',
+                      fontWeight: 700
+                    }}
+                  />
+                  <span style={{ fontSize: '12px', color: '#64748B' }}>분 (0 = 자동 닫힘 안 함)</span>
+                </div>
+              </div>
+
               {/* Single Apply Button */}
               <div style={{ marginTop: '18px' }}>
                 <button
@@ -1305,6 +1381,12 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                   <span style={{ color: '#64748B' }}>화면 절전 시간:</span>
                   <span style={{ fontWeight: 700, color: '#7C3AED' }}>
                     {activePopup.screenTimeoutMinutes === 0 ? '항상 켜짐' : `${activePopup.screenTimeoutMinutes || 60}분 미사용 시 꺼짐`}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748B' }}>팝업 무터치 자동 닫힘:</span>
+                  <span style={{ fontWeight: 700, color: '#0F766E' }}>
+                    {activePopup.popupAutoCloseMinutes === 0 ? '사용 안 함' : `${activePopup.popupAutoCloseMinutes ?? 5}분`}
                   </span>
                 </div>
               </div>

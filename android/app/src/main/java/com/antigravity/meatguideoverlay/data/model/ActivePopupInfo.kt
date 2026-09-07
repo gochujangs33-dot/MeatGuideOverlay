@@ -57,6 +57,10 @@ data class ActivePopupInfo(
     @SerializedName("screenTimeoutMinutes")
     val screenTimeoutMinutes: Int = 60,
 
+    // Popup inactivity timeout in minutes. 0 disables automatic popup closing.
+    @SerializedName("popupAutoCloseMinutes")
+    val popupAutoCloseMinutes: Int = 5,
+
     // Character Placement Position ("RIGHT_TOP" or "LEFT_TOP")
     @SerializedName("characterPosition")
     val characterPosition: String = "RIGHT_TOP"

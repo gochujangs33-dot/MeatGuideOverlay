@@ -78,7 +78,7 @@ class OverlayForegroundService : Service() {
         // Collect popup updates reactively and update power/sleep schedule
         serviceScope.launch {
             repository.activePopupState.collect { info ->
-                Log.d(TAG, "Active popup config updated in service: v${info.version}, autoReboot=${info.autoRebootEnabled} (${info.autoRebootTime}), screenTimeout=${info.screenTimeoutMinutes}m")
+                Log.d(TAG, "Active popup config updated in service: v${info.version}, autoReboot=${info.autoRebootEnabled} (${info.autoRebootTime}), screenTimeout=${info.screenTimeoutMinutes}m, popupAutoClose=${info.popupAutoCloseMinutes}m")
                 com.antigravity.meatguideoverlay.util.DevicePowerScheduler.scheduleDailyReboot(
                     context = applicationContext,
                     enabled = info.autoRebootEnabled,

@@ -32,6 +32,7 @@ export const DEFAULT_ACTIVE_POPUP: ActivePopupInfo = {
   autoRebootEnabled: true,
   autoRebootTime: '10:00',
   screenTimeoutMinutes: 60,
+  popupAutoCloseMinutes: 5,
   characterPosition: 'RIGHT_TOP'
 };
 
@@ -189,6 +190,7 @@ export async function uploadAndApplyMultiLangPopup(
     autoRebootEnabled?: boolean;
     autoRebootTime?: string;
     screenTimeoutMinutes?: number;
+    popupAutoCloseMinutes?: number;
     characterPosition?: 'RIGHT_TOP' | 'LEFT_TOP';
   }
 ): Promise<ActivePopupInfo> {
@@ -246,6 +248,9 @@ export async function uploadAndApplyMultiLangPopup(
     autoRebootEnabled: powerSettings?.autoRebootEnabled !== undefined ? powerSettings.autoRebootEnabled : (currentInfo.autoRebootEnabled ?? true),
     autoRebootTime: powerSettings?.autoRebootTime || currentInfo.autoRebootTime || '10:00',
     screenTimeoutMinutes: powerSettings?.screenTimeoutMinutes !== undefined ? powerSettings.screenTimeoutMinutes : (currentInfo.screenTimeoutMinutes ?? 60),
+    popupAutoCloseMinutes: powerSettings?.popupAutoCloseMinutes !== undefined
+      ? Math.max(0, Math.min(720, Math.floor(powerSettings.popupAutoCloseMinutes)))
+      : (currentInfo.popupAutoCloseMinutes ?? 5),
     characterPosition: powerSettings?.characterPosition || currentInfo.characterPosition || 'RIGHT_TOP'
   };
 

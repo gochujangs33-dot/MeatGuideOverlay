@@ -50,7 +50,6 @@ class OverlayWindowController(
     companion object {
         private const val TAG = "OverlayWindowController"
         private const val DEFAULT_CHARACTER_POSITION = "LEFT_TOP"
-        private const val POPUP_AUTO_CLOSE_DELAY_MS = 5 * 60 * 1000L
 
         @Volatile
         private var instance: OverlayWindowController? = null
@@ -78,7 +77,7 @@ class OverlayWindowController(
     private var isPopupAttached = false
     private val popupAutoCloseRunnable = Runnable {
         if (isPopupAttached) {
-            Log.i(TAG, "Popup auto-closed after 5 minutes without touch input")
+            Log.i(TAG, "Popup auto-closed after inactivity timeout")
             closeSingleImagePopup()
         }
     }
@@ -111,6 +110,9 @@ class OverlayWindowController(
                     // Keep the kiosk helper anchored to the requested top-left position.
                     // A remote popup refresh must not move it back to the old right side.
                     applyCharacterPosition(DEFAULT_CHARACTER_POSITION)
+                    if (isPopupAttached) {
+                        resetPopupAutoCloseTimer()
+                    }
                 }
             }
         }
@@ -509,8 +511,13 @@ class OverlayWindowController(
 
     private fun resetPopupAutoCloseTimer() {
         mainHandler.removeCallbacks(popupAutoCloseRunnable)
-        if (isPopupAttached) {
-            mainHandler.postDelayed(popupAutoCloseRunnable, POPUP_AUTO_CLOSE_DELAY_MS)
+        val timeoutMinutes = popupImageRepository.activePopupState.value.popupAutoCloseMinutes
+            .coerceIn(0, 720)
+        if (isPopupAttached && timeoutMinutes > 0) {
+            mainHandler.postDelayed(
+                popupAutoCloseRunnable,
+                timeoutMinutes * 60_000L
+            )
         }
     }
 

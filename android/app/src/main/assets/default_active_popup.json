@@ -14,5 +14,6 @@
   "bubbleTextJa": "このお肉がどの部位か気になりますか？",
   "autoRebootEnabled": true,
   "autoRebootTime": "10:00",
-  "screenTimeoutMinutes": 60
+  "screenTimeoutMinutes": 60,
+  "popupAutoCloseMinutes": 5
 }

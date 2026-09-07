@@ -16,6 +16,7 @@ export interface ActivePopupInfo {
   autoRebootEnabled?: boolean; // Default: true
   autoRebootTime?: string; // Default: "10:00"
   screenTimeoutMinutes?: number; // Default: 60 (1 hour), 0 for always on
+  popupAutoCloseMinutes?: number; // Default: 5; 0 disables inactivity auto-close
   // Character Placement Position (Batch applied to all tablets)
   characterPosition?: 'RIGHT_TOP' | 'LEFT_TOP'; // Default: "RIGHT_TOP"
 }
