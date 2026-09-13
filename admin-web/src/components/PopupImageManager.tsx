@@ -75,7 +75,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
   });
 
   // Tablet Power & Screen Timeout Settings
-  const [autoRebootEnabled, setAutoRebootEnabled] = useState<boolean>(true);
+  const [autoRebootEnabled, setAutoRebootEnabled] = useState<boolean>(false);
   const [autoRebootTime, setAutoRebootTime] = useState<string>('10:00');
   const [screenTimeoutMinutes, setScreenTimeoutMinutes] = useState<number>(60);
   const [popupAutoCloseMinutes, setPopupAutoCloseMinutes] = useState<number>(5);
@@ -107,7 +107,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
         en: info.bubbleTextEn || DEFAULT_ACTIVE_POPUP.bubbleTextEn!,
         ja: info.bubbleTextJa || DEFAULT_ACTIVE_POPUP.bubbleTextJa!
       });
-      setAutoRebootEnabled(info.autoRebootEnabled !== false);
+      setAutoRebootEnabled(false);
       setAutoRebootTime(info.autoRebootTime || '10:00');
       setScreenTimeoutMinutes(info.screenTimeoutMinutes ?? 60);
       setPopupAutoCloseMinutes(Math.max(0, Math.min(720, info.popupAutoCloseMinutes ?? 5)));
@@ -124,7 +124,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
         en: info.bubbleTextEn || DEFAULT_ACTIVE_POPUP.bubbleTextEn!,
         ja: info.bubbleTextJa || DEFAULT_ACTIVE_POPUP.bubbleTextJa!
       });
-      setAutoRebootEnabled(info.autoRebootEnabled !== false);
+      setAutoRebootEnabled(false);
       setAutoRebootTime(info.autoRebootTime || '10:00');
       setScreenTimeoutMinutes(info.screenTimeoutMinutes ?? 60);
       setPopupAutoCloseMinutes(Math.max(0, Math.min(720, info.popupAutoCloseMinutes ?? 5)));
@@ -274,7 +274,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
     bubbleTexts.ja.trim() !== (activePopup.bubbleTextJa || '').trim();
 
   const hasPowerSettingsChanged =
-    autoRebootEnabled !== (activePopup.autoRebootEnabled !== false) ||
+    autoRebootEnabled !== (activePopup.autoRebootEnabled === true) ||
     autoRebootTime !== (activePopup.autoRebootTime || '10:00') ||
     screenTimeoutMinutes !== (activePopup.screenTimeoutMinutes ?? 60) ||
     popupAutoCloseMinutes !== (activePopup.popupAutoCloseMinutes ?? 5);
@@ -1191,15 +1191,16 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                     </span>
                   </div>
 
-                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '6px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'not-allowed', gap: '6px' }}>
                     <input
                       type="checkbox"
                       checked={autoRebootEnabled}
-                      onChange={(e) => setAutoRebootEnabled(e.target.checked)}
-                      style={{ width: '16px', height: '16px', accentColor: '#E11D48', cursor: 'pointer' }}
+                      disabled
+                      onChange={() => setAutoRebootEnabled(false)}
+                      style={{ width: '16px', height: '16px', accentColor: '#E11D48', cursor: 'not-allowed' }}
                     />
                     <span style={{ fontSize: '12px', fontWeight: 700, color: autoRebootEnabled ? '#E11D48' : '#64748B' }}>
-                      {autoRebootEnabled ? '사용 중 (ON)' : '사용 안함 (OFF)'}
+                      사용 안함 (OFF)
                     </span>
                   </label>
                 </div>
@@ -1223,7 +1224,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                     }}
                   />
                   <span style={{ fontSize: '11px', color: '#64748B' }}>
-                    (매일 지정 시각에 기기 재부팅 및 메모리 최적화 수행)
+                    (안전상 사용 중지됨 · 기존 오전 10시 예약도 자동 취소)
                   </span>
                 </div>
               </div>
@@ -1466,8 +1467,8 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#64748B' }}>매일 자동 재부팅:</span>
-                  <span style={{ fontWeight: 700, color: activePopup.autoRebootEnabled !== false ? '#0284C7' : '#94A3B8' }}>
-                    {activePopup.autoRebootEnabled !== false ? `매일 ${activePopup.autoRebootTime || '10:00'}` : '미사용'}
+                  <span style={{ fontWeight: 700, color: '#94A3B8' }}>
+                    미사용
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>

@@ -12,6 +12,11 @@ class ActivePopupInfoTest {
     private val gson = Gson()
 
     @Test
+    fun automaticRebootIsDisabledByDefault() {
+        assertFalse(ActivePopupInfo().autoRebootEnabled)
+    }
+
+    @Test
     fun testValidActivePopupInfo() {
         val info = ActivePopupInfo(
             imageUrl = "https://firebasestorage.googleapis.com/v0/b/app/o/pork.jpg",

@@ -49,7 +49,7 @@ data class ActivePopupInfo(
 
     // Tablet Power & Sleep Schedule Settings
     @SerializedName("autoRebootEnabled")
-    val autoRebootEnabled: Boolean = true,
+    val autoRebootEnabled: Boolean = false,
 
     @SerializedName("autoRebootTime")
     val autoRebootTime: String = "10:00",

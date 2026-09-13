@@ -14,8 +14,8 @@ android {
         applicationId = "com.antigravity.meatguideoverlay"
         minSdk = 23
         targetSdk = 34
-        versionCode = 17
-        versionName = "1.0.16"
+        versionCode = 18
+        versionName = "1.0.17"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

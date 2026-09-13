@@ -29,7 +29,7 @@ export const DEFAULT_ACTIVE_POPUP: ActivePopupInfo = {
   bubbleTextKo: '이 고기가 어떤 부위인지 궁금하신가요?',
   bubbleTextEn: 'Wondering which cut of meat this is?',
   bubbleTextJa: 'このお肉がどの部位か気になりますか？',
-  autoRebootEnabled: true,
+  autoRebootEnabled: false,
   autoRebootTime: '10:00',
   screenTimeoutMinutes: 60,
   popupAutoCloseMinutes: 5,
@@ -245,7 +245,7 @@ export async function uploadAndApplyMultiLangPopup(
     bubbleTextKo: bubbleTexts.ko.trim() || DEFAULT_ACTIVE_POPUP.bubbleTextKo || '이 고기가 어떤 부위인지 궁금하신가요?',
     bubbleTextEn: bubbleTexts.en.trim() || DEFAULT_ACTIVE_POPUP.bubbleTextEn || 'Wondering which cut of meat this is?',
     bubbleTextJa: bubbleTexts.ja.trim() || DEFAULT_ACTIVE_POPUP.bubbleTextJa || 'このお肉がどの部位か気になりますか？',
-    autoRebootEnabled: powerSettings?.autoRebootEnabled !== undefined ? powerSettings.autoRebootEnabled : (currentInfo.autoRebootEnabled ?? true),
+    autoRebootEnabled: powerSettings?.autoRebootEnabled !== undefined ? powerSettings.autoRebootEnabled : (currentInfo.autoRebootEnabled ?? false),
     autoRebootTime: powerSettings?.autoRebootTime || currentInfo.autoRebootTime || '10:00',
     screenTimeoutMinutes: powerSettings?.screenTimeoutMinutes !== undefined ? powerSettings.screenTimeoutMinutes : (currentInfo.screenTimeoutMinutes ?? 60),
     popupAutoCloseMinutes: powerSettings?.popupAutoCloseMinutes !== undefined

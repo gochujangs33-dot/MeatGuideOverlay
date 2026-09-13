@@ -2,6 +2,8 @@ package com.antigravity.meatguideoverlay
 
 import android.app.Application
 import android.util.Log
+import com.antigravity.meatguideoverlay.util.DevicePowerScheduler
+import com.antigravity.meatguideoverlay.util.OverlayServiceWatchdog
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 
@@ -17,6 +19,9 @@ class MeatGuideApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         initFirebaseSafely()
+        // Automatic reboot is intentionally disabled. Remove alarms left by older APKs.
+        DevicePowerScheduler.cancelDailyReboot(this)
+        OverlayServiceWatchdog.schedulePeriodic(this)
     }
 
     private fun initFirebaseSafely() {

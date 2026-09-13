@@ -25,6 +25,11 @@ object DevicePowerScheduler {
     const val ACTION_DAILY_REBOOT = "com.antigravity.meatguideoverlay.ACTION_DAILY_REBOOT"
     private const val REBOOT_ALARM_REQ_CODE = 9921
 
+    /** Cancels any reboot alarm that may have been scheduled by an older APK. */
+    fun cancelDailyReboot(context: Context) {
+        scheduleDailyReboot(context, enabled = false)
+    }
+
     /**
      * Returns true only when Android officially allows this app to reboot the
      * tablet without user interaction. A scheduled soft refresh is not treated

@@ -49,8 +49,8 @@ describe('Popup Image Upload Validation Tests', () => {
     expect(result.error).toContain('25MB 이하');
   });
 
-  it('should have default auto reboot time at 10:00 and screen timeout at 60 minutes', () => {
-    expect(DEFAULT_ACTIVE_POPUP.autoRebootEnabled).toBe(true);
+  it('should keep automatic reboot disabled by default', () => {
+    expect(DEFAULT_ACTIVE_POPUP.autoRebootEnabled).toBe(false);
     expect(DEFAULT_ACTIVE_POPUP.autoRebootTime).toBe('10:00');
     expect(DEFAULT_ACTIVE_POPUP.screenTimeoutMinutes).toBe(60);
   });

@@ -16,10 +16,13 @@ import com.antigravity.meatguideoverlay.R
 import com.antigravity.meatguideoverlay.data.repository.PopupImageRepository
 import com.antigravity.meatguideoverlay.data.datasource.DeviceStatusReporter
 import com.antigravity.meatguideoverlay.ui.overlay.OverlayWindowController
+import com.antigravity.meatguideoverlay.util.OverlayServiceWatchdog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class OverlayForegroundService : Service() {
@@ -28,6 +31,12 @@ class OverlayForegroundService : Service() {
         private const val TAG = "OverlayForegroundSvc"
         private const val NOTIFICATION_ID = 9182
         private const val CHANNEL_ID = "meat_guide_overlay_service_channel"
+        private const val HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000L
+
+        @Volatile
+        private var isServiceRunning = false
+
+        fun isRunning(): Boolean = isServiceRunning
 
         const val ACTION_START = "com.antigravity.meatguideoverlay.action.START"
         const val ACTION_STOP = "com.antigravity.meatguideoverlay.action.STOP"
@@ -58,6 +67,7 @@ class OverlayForegroundService : Service() {
     private lateinit var overlayController: OverlayWindowController
     private lateinit var repository: com.antigravity.meatguideoverlay.data.repository.PopupImageRepository
     private lateinit var deviceStatusReporter: DeviceStatusReporter
+    private var stopRequested = false
 
     override fun onCreate() {
         super.onCreate()
@@ -77,16 +87,17 @@ class OverlayForegroundService : Service() {
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
+        isServiceRunning = true
 
         // Collect popup updates reactively and update power/sleep schedule
         serviceScope.launch {
             repository.activePopupState.collect { info ->
                 Log.d(TAG, "Active popup config updated in service: v${info.version}, autoReboot=${info.autoRebootEnabled} (${info.autoRebootTime}), screenTimeout=${info.screenTimeoutMinutes}m, popupAutoClose=${info.popupAutoCloseMinutes}m")
                 deviceStatusReporter.report(info.version)
-                com.antigravity.meatguideoverlay.util.DevicePowerScheduler.scheduleDailyReboot(
-                    context = applicationContext,
-                    enabled = info.autoRebootEnabled,
-                    timeString = info.autoRebootTime
+                // Reboot scheduling is disabled in this release. This also clears
+                // alarms persisted by an older installed version.
+                com.antigravity.meatguideoverlay.util.DevicePowerScheduler.cancelDailyReboot(
+                    applicationContext
                 )
                 val hardwareRebootAvailable =
                     com.antigravity.meatguideoverlay.util.DevicePowerScheduler.canPerformHardwareReboot(applicationContext)
@@ -99,6 +110,14 @@ class OverlayForegroundService : Service() {
                     Log.i(TAG, "Hardware reboot unavailable -> disabling automatic screen-off timeout")
                 }
                 overlayController.updateScreenTimeout(effectiveScreenTimeout)
+            }
+        }
+
+        // Keep the admin status fresh and make service loss visible within minutes.
+        serviceScope.launch(Dispatchers.IO) {
+            while (isActive) {
+                delay(HEARTBEAT_INTERVAL_MS)
+                deviceStatusReporter.report(repository.activePopupState.value.version)
             }
         }
     }
@@ -119,6 +138,7 @@ class OverlayForegroundService : Service() {
                 overlayController.refreshServiceAndOverlay()
             }
             ACTION_STOP -> {
+                stopRequested = true
                 overlayController.releaseAll()
                 androidx.core.app.ServiceCompat.stopForeground(this, androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE)
                 stopSelf()
@@ -127,6 +147,13 @@ class OverlayForegroundService : Service() {
         }
 
         return START_STICKY
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        if (!stopRequested) {
+            OverlayServiceWatchdog.requestImmediateCheck(applicationContext)
+        }
     }
 
     private fun createNotificationChannel() {
@@ -167,9 +194,13 @@ class OverlayForegroundService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        isServiceRunning = false
         serviceScope.cancel()
         overlayController.releaseAll()
         Log.d(TAG, "OverlayForegroundService destroyed")
+        if (!stopRequested) {
+            OverlayServiceWatchdog.requestImmediateCheck(applicationContext)
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

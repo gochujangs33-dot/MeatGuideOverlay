@@ -82,7 +82,8 @@ class FirebasePopupDataSource {
                         val bubbleTextKo = snapshot.getString("bubbleTextKo") ?: bubbleText
                         val bubbleTextEn = snapshot.getString("bubbleTextEn") ?: "Wondering which cut of meat this is?"
                         val bubbleTextJa = snapshot.getString("bubbleTextJa") ?: "このお肉がどの部位か気になりますか？"
-                        val autoRebootEnabled = snapshot.getBoolean("autoRebootEnabled") ?: true
+                        // Missing legacy values must never silently enable a reboot schedule.
+                        val autoRebootEnabled = snapshot.getBoolean("autoRebootEnabled") ?: false
                         val autoRebootTime = snapshot.getString("autoRebootTime") ?: "10:00"
                         val screenTimeoutMinutes = snapshot.getLong("screenTimeoutMinutes")?.toInt() ?: 60
                         val popupAutoCloseMinutes = snapshot.getLong("popupAutoCloseMinutes")?.toInt() ?: 5

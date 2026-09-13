@@ -12,7 +12,7 @@
   "bubbleTextKo": "이 고기가 어떤 부위인지 궁금하신가요?",
   "bubbleTextEn": "Wondering which cut of meat this is?",
   "bubbleTextJa": "このお肉がどの部位か気になりますか？",
-  "autoRebootEnabled": true,
+  "autoRebootEnabled": false,
   "autoRebootTime": "10:00",
   "screenTimeoutMinutes": 60,
   "popupAutoCloseMinutes": 5

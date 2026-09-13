@@ -8,8 +8,10 @@ import com.antigravity.meatguideoverlay.service.OverlayForegroundService
 import com.antigravity.meatguideoverlay.util.PreferencesManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.antigravity.meatguideoverlay.util.OverlayServiceWatchdog
 
 class BootCompletedReceiver : BroadcastReceiver() {
 
@@ -24,38 +26,38 @@ class BootCompletedReceiver : BroadcastReceiver() {
             action == Intent.ACTION_MY_PACKAGE_REPLACED
         ) {
             Log.i(TAG, "Boot or package update event received: $action")
+            OverlayServiceWatchdog.schedulePeriodic(context)
             val preferencesManager = PreferencesManager(context)
+            val pendingResult = goAsync()
 
-            CoroutineScope(Dispatchers.Main).launch {
-                val isSetupDone = preferencesManager.isSetupCompleted()
-                if (isSetupDone) {
-                    // Start overlay service
-                    try {
+            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                try {
+                    val isSetupDone = preferencesManager.isSetupCompleted()
+                    if (isSetupDone) {
                         OverlayForegroundService.startService(context)
                         Log.i(TAG, "OverlayForegroundService started successfully on boot")
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to start service on boot: ${e.message}", e)
-                    }
 
-                    // Optional Auto-launch of selected Kiosk app
-                    val autoLaunch = preferencesManager.autoLaunchKioskFlow.first()
-                    if (autoLaunch) {
-                        val kioskPkg = preferencesManager.getSelectedKioskPackage()
-                        if (kioskPkg.isNotBlank()) {
-                            try {
+                        // Optional Auto-launch of selected Kiosk app
+                        val autoLaunch = preferencesManager.autoLaunchKioskFlow.first()
+                        if (autoLaunch) {
+                            val kioskPkg = preferencesManager.getSelectedKioskPackage()
+                            if (kioskPkg.isNotBlank()) {
                                 val launchIntent = context.packageManager.getLaunchIntentForPackage(kioskPkg)
                                 if (launchIntent != null) {
                                     launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                     context.startActivity(launchIntent)
                                     Log.i(TAG, "Auto-launched kiosk package: $kioskPkg")
                                 }
-                            } catch (e: Exception) {
-                                Log.w(TAG, "Could not auto-launch kiosk app: ${e.message}")
                             }
                         }
+                    } else {
+                        Log.d(TAG, "Setup wizard has not been completed yet. Skipping auto-start.")
                     }
-                } else {
-                    Log.d(TAG, "Setup wizard has not been completed yet. Skipping auto-start.")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed restoring app after boot/update: ${e.message}", e)
+                    OverlayServiceWatchdog.requestImmediateCheck(context)
+                } finally {
+                    pendingResult.finish()
                 }
             }
         }

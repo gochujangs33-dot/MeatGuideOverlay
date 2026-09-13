@@ -13,7 +13,7 @@ export interface ActivePopupInfo {
   bubbleTextEn?: string;
   bubbleTextJa?: string;
   // Tablet Power & Sleep Schedule Settings (Batch applied to all tablets)
-  autoRebootEnabled?: boolean; // Default: true
+  autoRebootEnabled?: boolean; // Default: false
   autoRebootTime?: string; // Default: "10:00"
   screenTimeoutMinutes?: number; // Default: 60 (1 hour), 0 for always on
   popupAutoCloseMinutes?: number; // Default: 5; 0 disables inactivity auto-close
