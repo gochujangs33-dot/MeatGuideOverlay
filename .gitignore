@@ -5,6 +5,9 @@ bin/
 */build/
 .gradle/
 */.gradle/
+*.apk
+admin-web/public/updates/*.bin
+admin-web/public/updates/*.apk
 
 # Android Studio & IntelliJ
 *.iml
