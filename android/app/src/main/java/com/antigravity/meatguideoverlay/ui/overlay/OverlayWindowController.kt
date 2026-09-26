@@ -28,7 +28,10 @@ import com.antigravity.meatguideoverlay.databinding.OverlayFloatingCharacterBind
 import com.antigravity.meatguideoverlay.util.PreferencesManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -70,6 +73,8 @@ class OverlayWindowController(
     private var floatingBinding: OverlayFloatingCharacterBinding? = null
     private var floatingLayoutParams: WindowManager.LayoutParams? = null
     private var isCharacterAttached = false
+    private var bubbleRotationJob: Job? = null
+    private var currentBubbleLangIndex = 0
 
     // Single Image Popup Dialog Elements
     private var popupBinding: DialogSingleImagePopupBinding? = null
@@ -106,7 +111,9 @@ class OverlayWindowController(
         scope.launch {
             popupImageRepository.activePopupState.collect {
                 mainHandler.post {
-                    showSpeechBubble()
+                    if (isCharacterAttached) {
+                        showSpeechBubble()
+                    }
                     // Keep the kiosk helper anchored to the requested top-left position.
                     // A remote popup refresh must not move it back to the old right side.
                     applyCharacterPosition(DEFAULT_CHARACTER_POSITION)
@@ -238,12 +245,14 @@ class OverlayWindowController(
     }
 
     fun hideFloatingCharacter() {
+        stopSpeechBubbleLanguageCycle()
         if (isCharacterAttached) {
             floatingBinding?.root?.visibility = View.GONE
         }
     }
 
     fun removeFloatingCharacter() {
+        stopSpeechBubbleLanguageCycle()
         if (isCharacterAttached && floatingBinding != null) {
             try {
                 windowManager.removeView(floatingBinding?.root)
@@ -255,13 +264,61 @@ class OverlayWindowController(
         }
     }
 
+    private fun getSpeechBubbleText(popupInfo: ActivePopupInfo, langIndex: Int): String {
+        val fallback = popupInfo.bubbleTextKo.ifBlank {
+            popupInfo.bubbleText.ifBlank {
+                context.getString(R.string.default_speech_bubble)
+            }
+        }
+        return when (langIndex) {
+            1 -> popupInfo.bubbleTextEn.ifBlank { fallback }
+            2 -> popupInfo.bubbleTextJa.ifBlank { fallback }
+            else -> fallback
+        }
+    }
+
     private fun showSpeechBubble() {
         floatingBinding?.let { binding ->
             binding.cardSpeechBubble.visibility = View.VISIBLE
             binding.tvSpeechBubble.visibility = View.VISIBLE
             binding.tvSpeechBubble.alpha = 1f
-            binding.tvSpeechBubble.text = context.getString(R.string.default_speech_bubble)
+            val popupInfo = popupImageRepository.activePopupState.value
+            binding.tvSpeechBubble.text = getSpeechBubbleText(popupInfo, currentBubbleLangIndex)
         }
+        startSpeechBubbleLanguageCycle()
+    }
+
+    private fun startSpeechBubbleLanguageCycle() {
+        bubbleRotationJob?.cancel()
+        bubbleRotationJob = scope.launch {
+            while (isActive) {
+                delay(3000L)
+                if (isPopupAttached || !isCharacterAttached || floatingBinding == null) {
+                    continue
+                }
+
+                currentBubbleLangIndex = (currentBubbleLangIndex + 1) % 3
+                val popupInfo = popupImageRepository.activePopupState.value
+                val nextText = getSpeechBubbleText(popupInfo, currentBubbleLangIndex)
+
+                mainHandler.post {
+                    val tv = floatingBinding?.tvSpeechBubble ?: return@post
+                    tv.animate()
+                        .alpha(0f)
+                        .setDuration(150)
+                        .withEndAction {
+                            tv.text = nextText
+                            tv.animate().alpha(1f).setDuration(150).start()
+                        }
+                        .start()
+                }
+            }
+        }
+    }
+
+    private fun stopSpeechBubbleLanguageCycle() {
+        bubbleRotationJob?.cancel()
+        bubbleRotationJob = null
     }
 
     private fun setupFloatingTouchListener(
@@ -505,7 +562,6 @@ class OverlayWindowController(
         popupBinding = null
 
         showFloatingCharacter()
-        showSpeechBubble()
         Log.d(TAG, "Single image popup closed.")
     }
 
@@ -635,6 +691,7 @@ class OverlayWindowController(
 
     fun releaseAll() {
         cancelPopupAutoCloseTimer()
+        stopSpeechBubbleLanguageCycle()
         if (isPopupAttached && popupBinding != null) {
             try {
                 windowManager.removeView(popupBinding?.root)
