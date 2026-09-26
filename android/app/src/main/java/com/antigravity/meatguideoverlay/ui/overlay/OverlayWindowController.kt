@@ -2,7 +2,6 @@ package com.antigravity.meatguideoverlay.ui.overlay
 
 import android.animation.ValueAnimator
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.PixelFormat
@@ -19,12 +18,14 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
+import android.widget.Toast
 import com.antigravity.meatguideoverlay.R
 import com.antigravity.meatguideoverlay.data.model.ActivePopupInfo
 import com.antigravity.meatguideoverlay.data.repository.PopupImageRepository
 import com.antigravity.meatguideoverlay.databinding.DialogKioskErrorBinding
 import com.antigravity.meatguideoverlay.databinding.DialogSingleImagePopupBinding
 import com.antigravity.meatguideoverlay.databinding.OverlayFloatingCharacterBinding
+import com.antigravity.meatguideoverlay.service.KioskErrorAccessibilityService
 import com.antigravity.meatguideoverlay.util.PreferencesManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -609,8 +610,16 @@ class OverlayWindowController(
         }
 
         binding.btnOpenPowerMenu.setOnClickListener {
-            openSystemPowerMenu()
-            dismissErrorDialog()
+            if (KioskErrorAccessibilityService.openPowerDialog()) {
+                dismissErrorDialog()
+            } else {
+                // Keep the dialog open: it already tells staff to hold the power button.
+                Toast.makeText(
+                    context,
+                    "전원 메뉴를 열려면 접근성 서비스가 켜져 있어야 합니다. 태블릿 측면 전원 버튼을 길게 눌러 주세요.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
 
         try {
@@ -631,16 +640,6 @@ class OverlayWindowController(
         }
         isErrorDialogAttached = false
         errorBinding = null
-    }
-
-    private fun openSystemPowerMenu() {
-        try {
-            val intent = Intent(Intent.ACTION_POWER_USAGE_SUMMARY)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            Log.w(TAG, "Could not launch power menu: ${e.message}")
-        }
     }
 
     // ==========================================

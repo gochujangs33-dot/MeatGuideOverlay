@@ -82,6 +82,11 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    testOptions {
+        // Lets JVM unit tests run code that logs through android.util.Log.
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {

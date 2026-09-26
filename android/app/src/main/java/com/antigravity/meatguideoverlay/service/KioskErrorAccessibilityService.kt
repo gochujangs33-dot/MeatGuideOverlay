@@ -1,19 +1,17 @@
 package com.antigravity.meatguideoverlay.service
 
 import android.accessibilityservice.AccessibilityService
-import android.content.Context
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.antigravity.meatguideoverlay.ui.overlay.OverlayWindowController
-import com.antigravity.meatguideoverlay.util.ErrorTextMatcher
 import com.antigravity.meatguideoverlay.util.PreferencesManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.lang.ref.WeakReference
 
 class KioskErrorAccessibilityService : AccessibilityService() {
 
@@ -21,16 +19,27 @@ class KioskErrorAccessibilityService : AccessibilityService() {
         private const val TAG = "KioskAccessibilitySvc"
         private const val MAX_NODE_DEPTH = 12
         private const val MAX_NODE_COUNT = 60
-        private const val THROTTLE_INTERVAL_MS = 400L
 
         var isServiceRunning = false
             private set
+
+        @Volatile
+        private var connectedService: WeakReference<KioskErrorAccessibilityService>? = null
+
+        /**
+         * Opens the system power dialog (restart / power off) through the connected
+         * accessibility service. Returns false when the service is not enabled.
+         */
+        fun openPowerDialog(): Boolean {
+            val service = connectedService?.get() ?: return false
+            return service.performGlobalAction(GLOBAL_ACTION_POWER_DIALOG)
+        }
     }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val errorMatcher = ErrorTextMatcher()
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var overlayController: OverlayWindowController
+    private var errorMonitor: KioskErrorMonitor? = null
 
     private val defaultErrorPatterns = listOf(
         "서버에 접속이 끊겼습니다",
@@ -39,14 +48,27 @@ class KioskErrorAccessibilityService : AccessibilityService() {
         "통신 연결 오류"
     )
 
+    @Volatile
     private var targetKioskPackage: String = ""
-    private var lastProcessedEventTime = 0L
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         isServiceRunning = true
+        connectedService = WeakReference(this)
         preferencesManager = PreferencesManager(this)
         overlayController = OverlayWindowController.getInstance(this)
+        errorMonitor = KioskErrorMonitor(
+            scope = serviceScope,
+            uiDispatcher = Dispatchers.Main,
+            errorPatterns = defaultErrorPatterns,
+            readScreenText = ::readActiveWindowText,
+            onErrorDetected = {
+                overlayController.showKioskErrorDialog(
+                    title = "키오스크 서버 연결 확인 필요 (직원 안내)",
+                    message = "키오스크 화면에 서버 연결 끊김 알림이 감지되었습니다.\n1. 매장 Wi-Fi 공유기 및 랜선 연결 상태를 확인해주세요.\n2. 키오스크 태블릿 전원 버튼을 길게 눌러 [다시 시작]을 진행해주세요."
+                )
+            }
+        )
 
         serviceScope.launch {
             preferencesManager.selectedKioskPackageFlow.collect { pkg ->
@@ -61,13 +83,7 @@ class KioskErrorAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
 
-        // 1. Throttle processing
-        val currentTime = System.currentTimeMillis()
-        if (currentTime - lastProcessedEventTime < THROTTLE_INTERVAL_MS) {
-            return
-        }
-
-        // 2. Strict Package Name Filtering: Only inspect the selected kiosk package
+        // Strict Package Name Filtering: Only inspect the selected kiosk package
         val eventPackage = event.packageName?.toString() ?: return
         if (targetKioskPackage.isNotBlank() && eventPackage != targetKioskPackage) {
             return
@@ -81,42 +97,19 @@ class KioskErrorAccessibilityService : AccessibilityService() {
             return
         }
 
-        lastProcessedEventTime = currentTime
+        errorMonitor?.onScreenChanged()
+    }
 
-        // 3. Inspect Screen Text Nodes safely
-        serviceScope.launch {
-            val rootNode = rootInActiveWindow ?: return@launch
-            try {
-                val extractedTexts = mutableListOf<String>()
-                extractTextFromNodes(rootNode, extractedTexts, 0, intArrayOf(0))
-
-                if (extractedTexts.isEmpty()) return@launch
-
-                val fullScreenText = extractedTexts.joinToString(" ")
-
-                // 4. Check matching with normalized text
-                if (errorMatcher.matches(fullScreenText, defaultErrorPatterns)) {
-                    val cooldownMinutes = 5
-                    val errorKey = "kiosk_server_disconnect"
-
-                    if (errorMatcher.canTrigger(errorKey, cooldownMinutes)) {
-                        Log.w(TAG, "Kiosk server disconnect error detected on screen! Showing staff guidance dialog.")
-                        errorMatcher.recordTriggered(errorKey)
-
-                        overlayController.showKioskErrorDialog(
-                            title = "키오스크 서버 연결 확인 필요 (직원 안내)",
-                            message = "키오스크 화면에 서버 연결 끊김 알림이 감지되었습니다.\n1. 매장 Wi-Fi 공유기 및 랜선 연결 상태를 확인해주세요.\n2. 키오스크 태블릿 전원 버튼을 길게 눌러 [다시 시작]을 진행해주세요."
-                        )
-                    } else {
-                        Log.d(TAG, "Error matched but cooldown active ($cooldownMinutes min). Suppressed repeat dialog.")
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error inspecting accessibility nodes: ${e.message}")
-            } finally {
-                @Suppress("DEPRECATION")
-                rootNode.recycle()
-            }
+    /** Reads the visible text of the active window within the node depth and count limits. */
+    private fun readActiveWindowText(): String? {
+        val rootNode = rootInActiveWindow ?: return null
+        try {
+            val extractedTexts = mutableListOf<String>()
+            extractTextFromNodes(rootNode, extractedTexts, 0, intArrayOf(0))
+            return if (extractedTexts.isEmpty()) null else extractedTexts.joinToString(" ")
+        } finally {
+            @Suppress("DEPRECATION")
+            rootNode.recycle()
         }
     }
 
@@ -156,6 +149,8 @@ class KioskErrorAccessibilityService : AccessibilityService() {
     override fun onDestroy() {
         super.onDestroy()
         isServiceRunning = false
+        connectedService = null
+        errorMonitor = null
         serviceScope.cancel()
         Log.d(TAG, "KioskErrorAccessibilityService destroyed")
     }
