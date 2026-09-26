@@ -17,7 +17,7 @@ import java.net.URL
 /**
  * Firebase Data Source for single active popup image real-time synchronization.
  */
-class FirebasePopupDataSource {
+class FirebasePopupDataSource : PopupRemoteSource {
     companion object {
         private const val TAG = "FirebasePopupDataSource"
         private const val COLLECTION_ACTIVE_POPUP = "active_popup"
@@ -45,7 +45,7 @@ class FirebasePopupDataSource {
     /**
      * Real-time Flow observing changes to the active popup image in Firestore.
      */
-    fun observeActivePopup(): Flow<ActivePopupInfo?> = callbackFlow {
+    override fun observeActivePopup(): Flow<ActivePopupInfo?> = callbackFlow {
         val db = firestore
         if (db == null) {
             Log.i(TAG, "Firestore not connected. Running in offline/local asset mode.")
@@ -153,7 +153,7 @@ class FirebasePopupDataSource {
     /**
      * Downloads image stream from HTTP URL or decodes Base64 Data URL.
      */
-    fun downloadImageStream(imageUrl: String): InputStream? {
+    override fun downloadImageStream(imageUrl: String): InputStream? {
         if (imageUrl.startsWith("data:image/", ignoreCase = true)) {
             return try {
                 val base64Data = imageUrl.substringAfter(",")

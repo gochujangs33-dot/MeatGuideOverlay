@@ -18,7 +18,7 @@ import java.io.InputStream
 class LocalPopupDataSource(
     private val context: Context,
     private val gson: Gson = Gson()
-) {
+) : PopupLocalStore {
     companion object {
         private const val TAG = "LocalPopupDataSource"
         private const val METADATA_FILE_NAME = "active_popup.json"
@@ -30,21 +30,24 @@ class LocalPopupDataSource(
     private val metadataFile: File
         get() = File(context.filesDir, METADATA_FILE_NAME)
 
+    private val imageSourceRecord = ImageSourceRecord(context.filesDir)
+
     val cachedImageFile: File
         get() = getCachedImageFile("ko")
 
-    fun getCachedImageFile(lang: String): File {
-        val sanitizedLang = when (lang.lowercase()) {
-            "en" -> "en"
-            "ja" -> "ja"
-            else -> "ko"
-        }
+    override fun getCachedImageFile(lang: String): File {
         // A generation-specific file name prevents an app update from reusing the
         // previous 1024px poster cache when a higher-resolution asset is bundled.
-        return File(context.filesDir, "active_popup_image_${IMAGE_CACHE_GENERATION}_$sanitizedLang.png")
+        return File(context.filesDir, "active_popup_image_${IMAGE_CACHE_GENERATION}_${sanitizeLang(lang)}.png")
     }
 
-    suspend fun getActivePopupInfo(): ActivePopupInfo = withContext(Dispatchers.IO) {
+    private fun sanitizeLang(lang: String): String = when (lang.lowercase()) {
+        "en" -> "en"
+        "ja" -> "ja"
+        else -> "ko"
+    }
+
+    override suspend fun getActivePopupInfo(): ActivePopupInfo = withContext(Dispatchers.IO) {
         try {
             if (metadataFile.exists()) {
                 val json = metadataFile.readText(Charsets.UTF_8)
@@ -60,7 +63,7 @@ class LocalPopupDataSource(
         loadBundledDefaultInfo()
     }
 
-    suspend fun saveActivePopupInfo(info: ActivePopupInfo): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun saveActivePopupInfo(info: ActivePopupInfo): Boolean = withContext(Dispatchers.IO) {
         try {
             val json = gson.toJson(info)
             val tempFile = File(context.filesDir, "$METADATA_FILE_NAME.tmp")
@@ -78,7 +81,7 @@ class LocalPopupDataSource(
     /**
      * Ensures offline images are available for all supported languages (KO, EN, JA).
      */
-    suspend fun ensureAllLocalImagesAvailable() = withContext(Dispatchers.IO) {
+    override suspend fun ensureAllLocalImagesAvailable() = withContext(Dispatchers.IO) {
         listOf("ko", "en", "ja").forEach { lang ->
             ensureLocalImageAvailable(lang)
         }
@@ -88,7 +91,7 @@ class LocalPopupDataSource(
      * Ensures an offline image is available for the given language.
      * Extracts language-specific bundled asset (KO, EN, JA).
      */
-    suspend fun ensureLocalImageAvailable(lang: String = "ko"): File? = withContext(Dispatchers.IO) {
+    override suspend fun ensureLocalImageAvailable(lang: String): File? = withContext(Dispatchers.IO) {
         val targetFile = getCachedImageFile(lang)
         if (targetFile.exists() && targetFile.length() > 0) {
             return@withContext targetFile
@@ -113,6 +116,8 @@ class LocalPopupDataSource(
                     input.copyTo(output)
                 }
             }
+            // The cached file is now the bundled poster, not any previously downloaded one.
+            imageSourceRecord.clear(sanitizeLang(lang))
             Log.d(TAG, "Bundled poster image for $lang copied to cache (${targetFile.length()} bytes).")
             return@withContext targetFile
         } catch (e: Exception) {
@@ -125,12 +130,14 @@ class LocalPopupDataSource(
     /**
      * Atomically saves newly downloaded image bytes to cache for a language.
      */
-    suspend fun saveDownloadedImage(inputStream: InputStream, lang: String = "ko"): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun saveDownloadedImage(inputStream: InputStream, lang: String, sourceUrl: String): Boolean = withContext(Dispatchers.IO) {
         val targetFile = getCachedImageFile(lang)
         val tempFile = File(context.filesDir, "temp_popup_image_$lang.tmp")
         try {
-            FileOutputStream(tempFile).use { output ->
-                inputStream.copyTo(output)
+            inputStream.use { input ->
+                FileOutputStream(tempFile).use { output ->
+                    input.copyTo(output)
+                }
             }
 
             if (tempFile.length() <= 0) {
@@ -151,6 +158,7 @@ class LocalPopupDataSource(
             }
             val success = tempFile.renameTo(targetFile)
             if (success) {
+                imageSourceRecord.write(sanitizeLang(lang), sourceUrl)
                 Log.d(TAG, "Successfully replaced cached active popup image for $lang.")
             }
             return@withContext success
@@ -159,6 +167,11 @@ class LocalPopupDataSource(
             if (tempFile.exists()) tempFile.delete()
             false
         }
+    }
+
+    override suspend fun hasImageFrom(lang: String, sourceUrl: String): Boolean = withContext(Dispatchers.IO) {
+        val cachedFile = getCachedImageFile(lang)
+        cachedFile.exists() && cachedFile.length() > 0 && imageSourceRecord.matches(sanitizeLang(lang), sourceUrl)
     }
 
     private fun loadBundledDefaultInfo(): ActivePopupInfo {

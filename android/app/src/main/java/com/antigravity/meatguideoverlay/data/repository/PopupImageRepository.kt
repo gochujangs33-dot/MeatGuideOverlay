@@ -4,10 +4,14 @@ import android.content.Context
 import android.util.Log
 import com.antigravity.meatguideoverlay.data.datasource.FirebasePopupDataSource
 import com.antigravity.meatguideoverlay.data.datasource.LocalPopupDataSource
+import com.antigravity.meatguideoverlay.data.datasource.PopupLocalStore
+import com.antigravity.meatguideoverlay.data.datasource.PopupRemoteSource
 import com.antigravity.meatguideoverlay.data.model.ActivePopupInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,12 +22,14 @@ import java.io.File
  * Repository orchestrating local caching and remote real-time updates for multi-language active popup images.
  */
 class PopupImageRepository(
-    private val localDataSource: LocalPopupDataSource,
-    private val firebaseDataSource: FirebasePopupDataSource = FirebasePopupDataSource(),
+    private val localDataSource: PopupLocalStore,
+    private val firebaseDataSource: PopupRemoteSource = FirebasePopupDataSource(),
     private val externalScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 ) {
     companion object {
         private const val TAG = "PopupImageRepository"
+        private const val INITIAL_RETRY_DELAY_MS = 30_000L
+        private const val MAX_RETRY_DELAY_MS = 10 * 60_000L
 
         @Volatile
         private var instance: PopupImageRepository? = null
@@ -66,65 +72,64 @@ class PopupImageRepository(
 
     private fun observeRemoteUpdates() {
         externalScope.launch {
-            firebaseDataSource.observeActivePopup().collect { remoteInfo ->
-                if (remoteInfo == null) return@collect
-
-                val currentInfo = _activePopupState.value
-                if (remoteInfo.version > currentInfo.version) {
-                    Log.d(TAG, "New remote image/config detected (v${remoteInfo.version}). Starting multi-language downloads...")
-                    downloadAndApplyRemoteImages(remoteInfo)
-                } else if (remoteInfo != currentInfo) {
-                    Log.d(TAG, "Remote metadata/settings updated without version bump. Applying locally...")
-                    localDataSource.saveActivePopupInfo(remoteInfo)
-                    _activePopupState.value = remoteInfo
-                }
+            // collectLatest: a newer snapshot cancels the retry loop of an older one.
+            firebaseDataSource.observeActivePopup().collectLatest { remoteInfo ->
+                if (remoteInfo == null) return@collectLatest
+                applyWhenImagesReady(remoteInfo)
             }
         }
     }
 
-    private suspend fun downloadAndApplyRemoteImages(remoteInfo: ActivePopupInfo) {
-        // Download KO
-        val koUrl = remoteInfo.getEffectiveKoreanUrl()
-        if (koUrl.isNotBlank() && !koUrl.startsWith("assets/")) {
-            try {
-                val stream = firebaseDataSource.downloadImageStream(koUrl)
-                if (stream != null) {
-                    localDataSource.saveDownloadedImage(stream, "ko")
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed downloading KO image: ${e.message}")
-            }
+    /**
+     * Applies [remoteInfo] only after every poster it references is cached. A failed
+     * download is retried with backoff instead of being skipped, so the tablet never
+     * reports a content version whose posters it does not actually have.
+     */
+    private suspend fun applyWhenImagesReady(remoteInfo: ActivePopupInfo) {
+        var attempt = 0
+        while (!downloadMissingImages(remoteInfo)) {
+            val waitMs = retryDelayMs(attempt++)
+            Log.w(TAG, "Popup images for v${remoteInfo.version} incomplete; retrying in ${waitMs / 1000}s")
+            delay(waitMs)
         }
 
-        // Download EN
-        if (remoteInfo.imageUrlEn.isNotBlank() && !remoteInfo.imageUrlEn.startsWith("assets/")) {
-            try {
-                val stream = firebaseDataSource.downloadImageStream(remoteInfo.imageUrlEn)
-                if (stream != null) {
-                    localDataSource.saveDownloadedImage(stream, "en")
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed downloading EN image: ${e.message}")
-            }
+        if (remoteInfo != _activePopupState.value) {
+            localDataSource.saveActivePopupInfo(remoteInfo)
+            _activePopupState.value = remoteInfo
+            Log.d(TAG, "Applied remote popup v${remoteInfo.version}")
         }
-
-        // Download JA
-        if (remoteInfo.imageUrlJa.isNotBlank() && !remoteInfo.imageUrlJa.startsWith("assets/")) {
-            try {
-                val stream = firebaseDataSource.downloadImageStream(remoteInfo.imageUrlJa)
-                if (stream != null) {
-                    localDataSource.saveDownloadedImage(stream, "ja")
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed downloading JA image: ${e.message}")
-            }
-        }
-
-        localDataSource.saveActivePopupInfo(remoteInfo)
-        _activePopupState.value = remoteInfo
         _imageFileState.value = localDataSource.getCachedImageFile("ko")
-        Log.d(TAG, "Successfully downloaded and applied remote popup images v${remoteInfo.version}")
     }
+
+    /** Downloads each poster whose URL differs from the cached one; true when none failed. */
+    private suspend fun downloadMissingImages(remoteInfo: ActivePopupInfo): Boolean {
+        val imageUrls = listOf(
+            "ko" to remoteInfo.getEffectiveKoreanUrl(),
+            "en" to remoteInfo.imageUrlEn,
+            "ja" to remoteInfo.imageUrlJa
+        )
+        var allCached = true
+        for ((lang, url) in imageUrls) {
+            // Bundled asset names and relative paths have nothing to download.
+            if (!isDownloadableImageUrl(url) || localDataSource.hasImageFrom(lang, url)) continue
+
+            val saved = try {
+                val stream = firebaseDataSource.downloadImageStream(url)
+                stream != null && localDataSource.saveDownloadedImage(stream, lang, url)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed downloading ${lang.uppercase()} image: ${e.message}")
+                false
+            }
+            if (!saved) allCached = false
+        }
+        return allCached
+    }
+
+    private fun isDownloadableImageUrl(url: String): Boolean =
+        url.startsWith("https://", ignoreCase = true) || url.startsWith("data:image/", ignoreCase = true)
+
+    private fun retryDelayMs(attempt: Int): Long =
+        (INITIAL_RETRY_DELAY_MS shl attempt.coerceAtMost(5)).coerceAtMost(MAX_RETRY_DELAY_MS)
 
     suspend fun refreshSync(): Boolean {
         val file = localDataSource.ensureLocalImageAvailable("ko")
