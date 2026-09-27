@@ -73,9 +73,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
     ja: DEFAULT_ACTIVE_POPUP.bubbleTextJa || 'このお肉がどの部位か気になりますか？'
   });
 
-  // Tablet Power & Screen Timeout Settings
-  const [autoRebootEnabled, setAutoRebootEnabled] = useState<boolean>(false);
-  const [autoRebootTime, setAutoRebootTime] = useState<string>('10:00');
+  // Automatic reboot is retired (app v1.0.17+); every save keeps it off.
   const [popupAutoCloseMinutes, setPopupAutoCloseMinutes] = useState<number>(5);
   // The kiosk helper is fixed to the top-left corner on every tablet.
   const characterPosition = 'LEFT_TOP' as const;
@@ -107,8 +105,6 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
         en: info.bubbleTextEn || DEFAULT_ACTIVE_POPUP.bubbleTextEn!,
         ja: info.bubbleTextJa || DEFAULT_ACTIVE_POPUP.bubbleTextJa!
       });
-      setAutoRebootEnabled(false);
-      setAutoRebootTime(info.autoRebootTime || '10:00');
       setPopupAutoCloseMinutes(Math.max(0, Math.min(720, info.popupAutoCloseMinutes ?? 5)));
       setIsServerStateLoaded(true);
     };
@@ -260,8 +256,6 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
     bubbleTexts.ja.trim() !== (activePopup.bubbleTextJa || '').trim();
 
   const hasPowerSettingsChanged =
-    autoRebootEnabled !== (activePopup.autoRebootEnabled === true) ||
-    autoRebootTime !== (activePopup.autoRebootTime || '10:00') ||
     popupAutoCloseMinutes !== (activePopup.popupAutoCloseMinutes ?? 5);
 
   const hasChanges = isServerStateLoaded && (hasAnyFileSelected || hasBubbleTextChanged || hasPowerSettingsChanged);
@@ -281,8 +275,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
         activePopup,
         (progress) => setUploadProgress(progress),
         {
-          autoRebootEnabled,
-          autoRebootTime,
+          autoRebootEnabled: false,
           // Tablets stay on while open; staff turn the screen off after closing.
           screenTimeoutMinutes: 0,
           popupAutoCloseMinutes,
@@ -297,7 +290,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
         fileInputRef.current.value = '';
       }
 
-      setSuccessMessage(`태블릿 다국어 및 전원/절전 설정 적용이 완료되었습니다. (버전 ${updated.version})`);
+      setSuccessMessage(`태블릿 적용이 완료되었습니다. (버전 ${updated.version})`);
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err: any) {
       console.error('Failed to apply popup:', err);
@@ -1051,7 +1044,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Power size={18} color="#E11D48" />
                   <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-                    태블릿 전원 및 절전 관리 (모든 기기 일괄 적용)
+                    팝업 설정 (모든 태블릿 일괄 적용)
                   </h2>
                 </div>
                 <span style={{
@@ -1064,60 +1057,6 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                 }}>
                   전체 기기 원클릭 동기화
                 </span>
-              </div>
-
-              {/* A. Daily Auto Reboot Schedule */}
-              <div style={{
-                backgroundColor: '#F8FAFC',
-                border: '1px solid #E2E8F0',
-                borderRadius: '12px',
-                padding: '14px 16px',
-                marginBottom: '14px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Clock size={16} color="#0284C7" />
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
-                      매일 자동 재부팅 / 리프레시
-                    </span>
-                  </div>
-
-                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'not-allowed', gap: '6px' }}>
-                    <input
-                      type="checkbox"
-                      checked={autoRebootEnabled}
-                      disabled
-                      onChange={() => setAutoRebootEnabled(false)}
-                      style={{ width: '16px', height: '16px', accentColor: '#E11D48', cursor: 'not-allowed' }}
-                    />
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: autoRebootEnabled ? '#E11D48' : '#64748B' }}>
-                      사용 안함 (OFF)
-                    </span>
-                  </label>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '12px', color: '#475569', fontWeight: 600 }}>재부팅 시각:</span>
-                  <input
-                    type="time"
-                    value={autoRebootTime}
-                    disabled={!autoRebootEnabled}
-                    onChange={(e) => setAutoRebootTime(e.target.value)}
-                    style={{
-                      padding: '5px 10px',
-                      borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
-                      fontSize: '13px',
-                      fontWeight: 700,
-                      color: '#0F172A',
-                      backgroundColor: autoRebootEnabled ? '#FFFFFF' : '#F1F5F9',
-                      cursor: autoRebootEnabled ? 'pointer' : 'not-allowed'
-                    }}
-                  />
-                  <span style={{ fontSize: '11px', color: '#64748B' }}>
-                    (안전상 사용 중지됨 · 기존 오전 10시 예약도 자동 취소)
-                  </span>
-                </div>
               </div>
 
               {/* C. Popup Inactivity Auto-Close */}
@@ -1222,7 +1161,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                   ) : (
                     <>
                       <Sparkles size={18} />
-                      <span>다국어 및 태블릿 전원/절전 설정 일괄 적용</span>
+                      <span>태블릿에 적용</span>
                     </>
                   )}
                 </button>
@@ -1262,12 +1201,6 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#64748B' }}>등록된 언어:</span>
                   <span style={{ fontWeight: 700, color: '#E11D48' }}>🇰🇷 한국어 · 🇺🇸 English · 🇯🇵 日本語</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748B' }}>매일 자동 재부팅:</span>
-                  <span style={{ fontWeight: 700, color: '#94A3B8' }}>
-                    미사용
-                  </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#64748B' }}>캐릭터 상주 위치:</span>

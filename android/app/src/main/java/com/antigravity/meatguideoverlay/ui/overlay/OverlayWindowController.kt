@@ -26,6 +26,7 @@ import com.antigravity.meatguideoverlay.databinding.DialogKioskErrorBinding
 import com.antigravity.meatguideoverlay.databinding.DialogSingleImagePopupBinding
 import com.antigravity.meatguideoverlay.databinding.OverlayFloatingCharacterBinding
 import com.antigravity.meatguideoverlay.service.KioskErrorAccessibilityService
+import com.antigravity.meatguideoverlay.util.BubbleText
 import com.antigravity.meatguideoverlay.util.PosterSampling
 import com.antigravity.meatguideoverlay.util.PreferencesManager
 import kotlinx.coroutines.CoroutineScope
@@ -274,11 +275,12 @@ class OverlayWindowController(
                 context.getString(R.string.default_speech_bubble)
             }
         }
-        return when (langIndex) {
+        val text = when (langIndex) {
             1 -> popupInfo.bubbleTextEn.ifBlank { fallback }
             2 -> popupInfo.bubbleTextJa.ifBlank { fallback }
             else -> fallback
         }
+        return BubbleText.keepWordsTogether(text)
     }
 
     private fun showSpeechBubble() {
