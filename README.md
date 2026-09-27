@@ -1,28 +1,27 @@
 # MeatGuideOverlay (고기 부위 안내) - 고깃집 키오스크 보조 시스템
 
-기존 고깃집 주문 키오스크 앱을 일체 수정하거나 역공학하지 않고, 화면 위에 귀여운 캐릭터와 말풍선 오버레이를 띄워 고기 부위 설명 및 키오스크 서버 오류 안내를 제공하는 통합 보조 시스템입니다.
+기존 고깃집 주문 키오스크 앱을 일체 수정하거나 역공학하지 않고, 화면 위에 캐릭터와 말풍선 오버레이를 띄워 고기 부위 안내 포스터와 키오스크 서버 오류 안내를 제공하는 보조 시스템입니다.
 
 ---
 
 ## 🚀 주요 특징
 
-1. **무간섭(Non-intrusive) 오버레이 아키텍처**:
-   - 기존 키오스크 APK 역공학 및 결제/주문 데이터 조작 0%
-   - 화면 가장자리 자석 스냅 캐릭터 및 60초 자동 닫기 모달 팝업
-2. **소고기 단일 품목 (소생갈비살) 정책**:
-   - 첫 화면: **돼지고기 특수부위** / **소생갈비살** 정확히 2개 카드만 노출
-   - 육회, 뿌리살, 업진살 등 기타 소고기 품목 원천 배제
-3. **키오스크 서버 연결 단절 자동 감지**:
-   - "서버에 접속이 끊겼습니다" 화면 텍스트 실시간 감지
-   - 지정된 키오스크 패키지만 감시 + 5분 쿨다운으로 무한 루프 방지
-   - 직원용 재부팅 안내 및 전원 메뉴 팝업 제공
-4. **무중단 실시간 콘텐츠 업데이트 (OTA)**:
-   - 관리자 웹에서 수정 후 [게시] 시 앱 재시작 없이 모든 태블릿에 즉시 반영
-   - 스키마 검증 및 원자적(Atomic) 임시 파일 교체로 데이터 무결성 보장
-   - 오프라인에서도 마지막 캐시 버전으로 100% 정상 작동
-5. **초경량 저사양 태블릿 최적화**:
-   - 대기 상태 메모리 PSS ~38MB, CPU 사용률 0%에 수렴
-   - 릴리즈 APK 15MB 미만
+1. **무간섭(Non-intrusive) 오버레이**
+   - 기존 키오스크 APK 수정·역공학·주문 조작 없음
+   - 좌측 상단에 고정된 캐릭터와 말풍선(한국어 → 영어 → 일본어 3초 순환)
+   - 캐릭터를 누르면 전체 화면 포스터 팝업(한글/English/日本語 탭, 두 손가락 확대)
+   - 팝업은 닫기 버튼 또는 무터치 자동 닫힘(기본 5분, 관리자 웹에서 조정, 0 = 사용 안 함)으로 닫힘
+2. **소고기 단일 품목 (소생갈비살) 정책**
+   - 소고기는 소생갈비살 1종류만 취급하며, 육회·뿌리살·업진살 등 기타 소고기 메뉴는 추가하지 않음
+3. **키오스크 서버 연결 끊김 감지**
+   - 선택한 키오스크 앱 화면에서 "서버에 접속이 끊겼습니다" 등 등록된 문구 4종 감지(문구는 앱에 고정)
+   - 5분 쿨다운으로 반복 팝업 방지, 직원용 안내창에서 시스템 전원 메뉴 열기
+4. **실시간 콘텐츠 업데이트**
+   - 관리자 웹에서 [적용]하면 앱 재시작 없이 모든 태블릿에 반영
+   - 포스터 다운로드가 실패하면 자동으로 다시 시도하고, 포스터를 받은 뒤에만 새 버전으로 표시
+   - 오프라인에서도 마지막으로 받은 포스터로 동작
+5. **앱 자체 업데이트**
+   - 직원용 관리 대시보드의 [앱 업데이트 확인]으로 새 APK를 내려받아 설치(Firebase Hosting의 `release.json`)
 
 ---
 
@@ -30,61 +29,37 @@
 
 ```text
 MeatGuideOverlay/
-├─ AGENTS.md                  # 16대 프로젝트 자동 진행 규칙
-├─ README.md                  # 프로젝트 안내서
-├─ .gitignore                 # 보안 키스토어 및 자격증명 제외 설정
-├─ android/                   # 안드로이드 프로젝트 (Kotlin DSL, MinSdk 23, TargetSdk 34)
-│  ├─ app/                    # 고기 부위 안내 오버레이 메인 앱
-│  ├─ test-kiosk/             # 가상 주문 키오스크 테스트 앱
-│  ├─ build.gradle.kts
-│  ├─ settings.gradle.kts
-│  └─ gradlew.bat
-├─ admin-web/                 # 관리자 웹 콘솔 (React + TypeScript + Vite)
-│  ├─ src/
-│  ├─ tests/                  # Vitest 유효성 검증 단위 테스트
-│  ├─ package.json
-│  └─ vite.config.ts
-├─ firebase/                  # Firebase 보안 규칙 및 에뮬레이터 테스트
-│  ├─ firestore.rules
-│  ├─ storage.rules
-│  ├─ firebase.json
-│  └─ emulator-tests/
-├─ sample-content/            # 초기 배포용 데이터 및 벡터 에셋
-│  ├─ published-content.json
-│  └─ placeholder-assets/
-├─ scripts/                   # 빌드, 시드, 서명 자동화 스크립트
+├─ AGENTS.md                  # 에이전트 작업 규칙
+├─ README.md
+├─ android/                   # 안드로이드 프로젝트 (Kotlin DSL, minSdk 23, targetSdk 34)
+│  ├─ app/                    # 고기 부위 안내 오버레이 앱
+│  └─ test-kiosk/             # 가상 주문 키오스크 테스트 앱
+├─ admin-web/                 # 관리자 웹 (React 18 + TypeScript + Vite)
+│  ├─ src/                    # PopupImageManager, TabletPreviewViewer, services, tests
+│  └─ public/updates/         # 앱 업데이트 매니페스트(release.json)와 APK(.bin)
+├─ firebase/                  # Firestore/Storage 보안 규칙, 에뮬레이터 설정
+├─ firebase.json              # 배포용 Firebase 설정 (Hosting = admin-web/dist)
+├─ sample-content/            # 예전 콘텐츠 샘플 (현재 앱에서는 사용하지 않음)
+├─ scripts/                   # 빌드, 서명, 앱 업데이트 게시 스크립트
 │  ├─ build-all.ps1
 │  ├─ generate-keystore.ps1
-│  ├─ seed-emulator.js
-│  └─ bootstrap-admin.js
-├─ local-signing/             # 로컬 릴리즈 서명 키스토어 (Git 제외)
-├─ docs/                      # 9종 상세 기술 및 운영 문서
-└─ dist/                      # 최종 빌드 산출물
-   ├─ MeatGuideOverlay-release.apk
-   ├─ MeatGuideOverlay-debug.apk
-   ├─ TestKiosk-debug.apk
-   └─ admin-web-build.zip
+│  └─ publish-app-update.ps1
+├─ local-signing/             # 릴리즈 서명 키스토어 (Git 제외)
+└─ docs/                      # 운영·기술 문서
 ```
 
 ---
 
 ## 🛠 빌드 및 실행 방법
 
-### 1. 원클릭 전체 빌드 (APKs + Admin Web -> dist/)
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build-all.ps1
-```
-
-### 2. Android 개별 빌드 & 테스트
+### Android 빌드 & 테스트
 ```bash
 cd android
-./gradlew test
+./gradlew :app:testDebugUnitTest
 ./gradlew :app:assembleRelease
-./gradlew :app:assembleDebug
-./gradlew :test-kiosk:assembleDebug
 ```
 
-### 3. 관리자 웹 실행 및 테스트
+### 관리자 웹
 ```bash
 cd admin-web
 npm install
@@ -93,21 +68,21 @@ npm run build
 npm run dev
 ```
 
-### 4. Firebase 보안 규칙 테스트
-```bash
-node firebase/emulator-tests/rules.test.js
-```
+### 앱 업데이트 게시
+릴리즈 APK를 빌드한 뒤 `scripts/publish-app-update.ps1`을 실행하고 `firebase deploy --only hosting`으로 배포합니다. 자세한 절차는 [실시간 콘텐츠 업데이트 가이드](docs/CONTENT_UPDATE_GUIDE_KO.md)를 참고하세요.
 
 ---
 
 ## 📚 상세 문서 목록 (`docs/`)
 
-* [설치 및 배포 가이드](file:///docs/INSTALL_GUIDE_KO.md)
-* [태블릿 권한 및 기기 설정 가이드](file:///docs/DEVICE_SETUP_GUIDE_KO.md)
-* [Firebase 설정 및 보안 가이드](file:///docs/FIREBASE_SETUP_KO.md)
-* [관리자 웹 콘솔 가이드](file:///docs/ADMIN_WEB_GUIDE_KO.md)
-* [실시간 콘텐츠 업데이트 가이드](file:///docs/CONTENT_UPDATE_GUIDE_KO.md)
-* [문제 해결 및 트러블슈팅 가이드](file:///docs/TROUBLESHOOTING_KO.md)
-* [시스템 아키텍처 명세서](file:///docs/ARCHITECTURE.md)
-* [보안 및 개인정보 보호 명세서](file:///docs/SECURITY.md)
-* [저사양 태블릿 성능 측정 보고서](file:///docs/PERFORMANCE_REPORT.md)
+* [설치 및 배포 가이드](docs/INSTALL_GUIDE_KO.md)
+* [태블릿 권한 및 기기 설정 가이드](docs/DEVICE_SETUP_GUIDE_KO.md)
+* [태블릿 식별 및 업데이트 관리 안내](docs/TABLET_UPDATE_GUIDE_KO.md)
+* [Firebase 설정 및 보안 가이드](docs/FIREBASE_SETUP_KO.md)
+* [관리자 웹 콘솔 가이드](docs/ADMIN_WEB_GUIDE_KO.md)
+* [실시간 콘텐츠 업데이트 가이드](docs/CONTENT_UPDATE_GUIDE_KO.md)
+* [문제 해결 가이드](docs/TROUBLESHOOTING_KO.md)
+* [시스템 아키텍처](docs/ARCHITECTURE.md)
+* [보안 및 개인정보 보호](docs/SECURITY.md)
+* [성능 메모](docs/PERFORMANCE_REPORT.md)
+* [말풍선 다국어 순환 수정 보고서 (v1.0.18)](docs/ROTATING_SPEECH_BUBBLE_FIX_REPORT_KO.md)

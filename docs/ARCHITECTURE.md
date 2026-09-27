@@ -1,73 +1,74 @@
-# MeatGuideOverlay 시스템 아키텍처 명세서 (Architecture)
+# MeatGuideOverlay 시스템 아키텍처
 
-## 1. 시스템 전체 구조도
+## 1. 전체 구조
 
 ```mermaid
 graph TD
-    subgraph "Admin Web Console (React + Vite + TS)"
-        AdminUI[관리자 웹 UI] --> ContentService[ContentService]
-        ContentService --> LiveSimulator[태블릿 실시간 시뮬레이터]
+    subgraph "Admin Web (React + Vite + TS)"
+        AdminUI[PopupImageManager] --> Preview[TabletPreviewViewer]
     end
 
-    subgraph "Firebase Backend Cloud"
-        Auth[Firebase Auth - 익명 & 관리자]
-        Firestore[Cloud Firestore - published/current]
-        History[Firestore - content_history]
-        Storage[Firebase Storage - 에셋 이미지]
-        DevDoc[Firestore - devices/UID]
+    subgraph "Firebase"
+        Auth[Auth - 익명 로그인]
+        ActivePopup[Firestore active_popup/current]
+        Devices[Firestore devices/UID]
+        Storage[Storage popups/ 포스터]
+        Hosting[Hosting - 관리자 웹, updates/release.json]
     end
 
-    subgraph "Android Tablet Client (MeatGuideOverlay)"
-        BootReceiver[BootCompletedReceiver] --> FGS[OverlayForegroundService]
-        FGS --> WindowController[OverlayWindowController]
-        
-        WindowController --> FloatChar[플로팅 캐릭터 & 말풍선]
-        WindowController --> ModalDialog[고기 설명 모달 - 2카드 선택기]
-        WindowController --> ErrorDialog[직원용 재부팅 안내 팝업]
+    subgraph "Android Tablet (MeatGuideOverlay)"
+        Boot[BootCompletedReceiver] --> FGS[OverlayForegroundService]
+        Watchdog[OverlayServiceWatchdog 15분] --> FGS
+        FGS --> Window[OverlayWindowController]
+        Window --> Char[좌측 상단 캐릭터 + 3초 다국어 말풍선]
+        Window --> Popup[전체 화면 포스터 팝업]
+        Window --> ErrDlg[직원 오류 안내창]
 
-        A11y[KioskErrorAccessibilityService] --> ErrorMatcher[ErrorTextMatcher]
-        ErrorMatcher --> WindowController
+        A11y[KioskErrorAccessibilityService] --> Monitor[KioskErrorMonitor]
+        Monitor --> ErrDlg
 
-        Repo[ContentRepository] --> LocalDS[LocalContentDataSource]
-        Repo --> RemoteDS[FirebaseContentDataSource]
-        LocalDS --> DiskCache[content.json 원자적 캐시]
-        RemoteDS -.-> Firestore
-        RemoteDS -.-> DevDoc
-        FGS --> Repo
+        Repo[PopupImageRepository] --> Local[LocalPopupDataSource]
+        Repo --> Remote[FirebasePopupDataSource]
+        FGS --> Reporter[DeviceStatusReporter]
+        Dash[StaffDashboardActivity] --> Updater[AppUpdateManager]
     end
 
-    subgraph "Existing Kiosk App (Untouched)"
-        KioskUI[기존 키오스크 주문 화면]
-    end
-
-    AdminUI --> Firestore
-    AdminUI --> History
+    AdminUI --> ActivePopup
     AdminUI --> Storage
-    FloatChar -.화면 위 플로팅.-> KioskUI
-    A11y -.오류 텍스트만 제한 감시.-> KioskUI
+    AdminUI --> Devices
+    Remote -.-> ActivePopup
+    Remote -.-> Storage
+    Reporter -.-> Devices
+    Updater -.-> Hosting
 ```
 
 ---
 
-## 2. 주요 모듈 및 레이어 구성
+## 2. Android 앱 (`android/app`)
 
-### 2.1 Android 클라이언트 계층 (`android/app`)
-1. **Overlay Layer (`com.antigravity.meatguideoverlay.ui.overlay`)**:
-   * `OverlayWindowController`: `WindowManager`를 통해 시스템 오버레이 윈도우 생명주기 관리.
-   * `FloatingCharacterView`: 화면 모서리 자석 스냅(DecelerateInterpolator), DataStore 위치 영구 저장.
-   * `MeatGuideDialog`: 2개 카드(돼지고기 특수부위 / 소생갈비살) 모달, 60초 무입력 자동 닫기 타이머.
-   * `KioskErrorDialog`: 키오스크 장애 시 직원 호출 및 전원 메뉴 안내창.
-2. **Service Layer (`com.antigravity.meatguideoverlay.service`)**:
-   * `OverlayForegroundService`: 상주 백그라운드 서비스 및 알림 관리.
-   * `KioskErrorAccessibilityService`: 지정된 키오스크 패키지만 감시하는 경량 접근성 서비스 (최대 깊이 12, 최대 60개 노드로 제한하여 CPU 소모율 극소화).
-3. **Data Layer (`com.antigravity.meatguideoverlay.data`)**:
-   * `ContentRepository`: 로컬 캐시와 원격 Firestore 동기화 조율, 유효성 검사.
-   * `LocalContentDataSource`: 원자적(Atomic) `.tmp` 파일 쓰기 및 교체.
-   * `FirebaseContentDataSource`: 익명 인증 및 실시간 스냅샷 리스너.
+### 2.1 화면 (`ui`)
+* `OverlayWindowController`: WindowManager로 캐릭터·포스터 팝업·오류 안내창을 관리합니다. 캐릭터는 좌측 상단에 고정되고, 말풍선은 3초마다 언어가 바뀝니다. 포스터는 백그라운드에서 디코딩하며 최대 10MP로 제한합니다(`PosterSampling`).
+* `ZoomableTouchImageView`: 포스터 1~5배 확대·이동.
+* `SetupWizardActivity`, `StaffDashboardActivity`: 최초 설정과 직원용 관리 화면.
 
-### 2.2 가상 테스트 키오스크 (`android/test-kiosk`)
-* 실제 매장 주문 키오스크의 주문 플로우를 모사하여 캐릭터 오버레이 간섭 여부, 팝업 열림/닫힘, 오류 문구 감지 및 5분 쿨다운을 완벽히 검증할 수 있는 디버그 모듈.
+### 2.2 서비스 (`service`)
+* `OverlayForegroundService`: 상주 서비스. 설정 변경을 받아 화면 켜짐 유지, 기기 상태 보고(5분 주기)를 처리합니다.
+* `KioskErrorAccessibilityService`: 선택한 키오스크 앱의 화면 텍스트만 읽습니다(깊이 12, 60개 노드 제한). 시스템 전원 메뉴도 이 서비스로 엽니다.
+* `KioskErrorMonitor`: 이벤트를 400ms 단위로 모아 마지막 화면을 한 번 더 검사하고, 오류 문구가 보이면 5분 쿨다운을 거쳐 메인 스레드에서 안내창을 띄웁니다.
 
-### 2.3 관리자 웹 콘솔 (`admin-web`)
-* React 18, TypeScript, Vite 기반 한국어 모던 콘솔.
-* 실시간 태블릿 시뮬레이터, 초안 저장, 버전 히스토리 스냅샷 복원, 소고기 단일 품목 유효성 검사, 원클릭 배포 지원.
+### 2.3 데이터 (`data`)
+* `PopupImageRepository`: Firestore 스냅샷을 받아, 포스터 주소가 바뀐 언어만 내려받고 모두 준비된 뒤 새 버전을 적용합니다. 실패하면 30초~10분 간격으로 재시도합니다.
+* `LocalPopupDataSource`: 설정(`active_popup.json`)과 언어별 포스터 캐시, 포스터 출처 기록(`ImageSourceRecord`).
+* `FirebasePopupDataSource`: 익명 인증, 실시간 리스너, 서버 직접 조회, 포스터 다운로드.
+* `DeviceStatusReporter`: `devices/{uid}`에 이름·앱 버전·콘텐츠 버전 보고.
+
+### 2.4 기타
+* `AppUpdateManager`: `release.json` 확인, SHA-256 검증 후 Android 설치 화면 실행.
+* `DevicePowerScheduler`, `DailyRebootReceiver`: 예전 자동 재부팅 예약을 취소하는 용도로만 남아 있습니다(재부팅 기능은 v1.0.17부터 중지).
+* `ContentSyncWorker`: 현재 예약되지 않습니다.
+
+## 3. 가상 테스트 키오스크 (`android/test-kiosk`)
+주문 화면과 서버 연결 끊김 팝업을 흉내 내는 테스트용 앱입니다.
+
+## 4. 관리자 웹 (`admin-web`)
+React 18 + TypeScript + Vite. 포스터 업로드, 말풍선 자동 번역, 팝업 자동 닫힘 설정, 태블릿 현황, 미리보기를 제공합니다.

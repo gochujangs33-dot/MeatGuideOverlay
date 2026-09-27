@@ -25,7 +25,7 @@
 
 ## 3. 코드 수정 내용
 
-### 3.1 [OverlayWindowController.kt](file:///c:/Users/0op64/.gemini/antigravity/scratch/MeatGuideOverlay/android/app/src/main/java/com/antigravity/meatguideoverlay/ui/overlay/OverlayWindowController.kt)
+### 3.1 [OverlayWindowController.kt](../android/app/src/main/java/com/antigravity/meatguideoverlay/ui/overlay/OverlayWindowController.kt)
 1. **순환 상태 및 작업 변수 복원**:
    ```kotlin
    private var bubbleRotationJob: Job? = null
@@ -87,7 +87,7 @@
 ## 4. 앱 버전 관리 및 릴리즈 배포
 
 ### 4.1 버전 상향
-* **대상 파일**: [android/app/build.gradle.kts](file:///c:/Users/0op64/.gemini/antigravity/scratch/MeatGuideOverlay/android/app/build.gradle.kts)
+* **대상 파일**: [android/app/build.gradle.kts](../android/app/build.gradle.kts)
 * `versionCode`: `18` ➔ `19`
 * `versionName`: `"1.0.17"` ➔ `"1.0.18"`
 
@@ -121,10 +121,10 @@
 1. **태블릿에서 앱 실행**:
    * 태블릿 화면에서 `MeatGuideOverlay` 앱을 실행합니다.
 2. **직원용 관리 대시보드 진입**:
-   * 플로팅 캐릭터를 더블 탭하거나, 앱 런처를 통해 **직원용 관리 대시보드** 화면으로 들어갑니다.
+   * 앱 아이콘을 눌러 **직원용 관리 대시보드** 화면으로 들어갑니다. (플로팅 캐릭터를 누르면 포스터 팝업이 열립니다.)
 3. **업데이트 확인 및 설치**:
    * 화면 하단의 **[앱 업데이트 확인]** 버튼을 누릅니다.
-   * `새 버전 발견: v1.0.18 (19)` 알림 팝업이 표시됩니다.
+   * `새 앱 업데이트` 창에 `v1.0.18 업데이트가 있습니다.`가 표시됩니다.
    * **[다운로드 및 설치]**를 누르면 신규 파일 다운로드 후 안드로이드 표준 패키지 설치 화면이 나타납니다.
    * **[업데이트]**를 승인하여 설치를 완료합니다.
 4. **확인**:
