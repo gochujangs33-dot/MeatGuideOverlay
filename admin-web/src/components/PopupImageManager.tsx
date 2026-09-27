@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { ActivePopupInfo, DeviceStatus, SupportedLanguage } from '../types/popup';
 import { collection, firestore, onSnapshot } from '../services/firebase';
+import { fetchLatestAppVersionCode } from '../services/tabletStatus';
 import {
   fetchActivePopup,
   subscribeToActivePopup,
@@ -34,7 +35,13 @@ interface Props {
 export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
   const [activePopup, setActivePopup] = useState<ActivePopupInfo>(DEFAULT_ACTIVE_POPUP);
   const [deviceStatuses, setDeviceStatuses] = useState<DeviceStatus[]>([]);
-  const expectedAppVersionCode = 17;
+  // Latest published app version (from /updates/release.json).
+  const [expectedAppVersionCode, setExpectedAppVersionCode] = useState<number>(Number.MAX_SAFE_INTEGER);
+  useEffect(() => {
+    fetchLatestAppVersionCode().then((code) => {
+      if (code !== null) setExpectedAppVersionCode(code);
+    });
+  }, []);
 
   // Selected files per language
   const [selectedFiles, setSelectedFiles] = useState<{

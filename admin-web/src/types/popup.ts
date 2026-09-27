@@ -32,6 +32,15 @@ export interface DeviceStatus {
   androidVersion?: string;
   serviceState?: string;
   lastSeen?: unknown;
+  // Reported from app v1.0.21
+  contentUpdatedAt?: string;
+  appUpdatedAt?: unknown;
+  kioskPackage?: string;
+  autoLaunchKiosk?: boolean;
+  overlayPermission?: boolean;
+  accessibilityEnabled?: boolean;
+  writeSettingsPermission?: boolean;
+  popupAutoCloseMinutes?: number;
 }
 
 export interface UploadValidationResult {

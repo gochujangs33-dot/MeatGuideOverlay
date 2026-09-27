@@ -1,7 +1,7 @@
 ﻿{
-    "versionCode":  21,
-    "versionName":  "1.0.20",
-    "downloadUrl":  "https://meatguideoverlay.web.app/updates/meatguide-overlay-21.bin",
-    "sha256":  "b0f3f273650d9883d7505e0722a88400b365c12d6265d6c69efe7e7098699823",
-    "notes":  "말풍선 줄바꿈 개선, 포스터 확대 안내 문구 추가, 설정 화면 정리(키오스크 앱 기본 선택)"
+    "versionCode":  22,
+    "versionName":  "1.0.21",
+    "downloadUrl":  "https://meatguideoverlay.web.app/updates/meatguide-overlay-22.bin",
+    "sha256":  "347e629c48ed171b595f357eb667fd4be966a00aec9d002fa68d313070c7c1ba",
+    "notes":  "태블릿 현황 페이지용 설정 정보(키오스크 앱, 권한 상태, 업데이트 날짜) 보고 추가"
 }

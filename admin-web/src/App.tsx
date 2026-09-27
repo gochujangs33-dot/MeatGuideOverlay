@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { PopupImageManager } from './components/PopupImageManager';
+import { TabletStatusPage } from './components/TabletStatusPage';
 import {
   auth,
   onAuthStateChanged,
@@ -59,6 +60,11 @@ export const App: React.FC = () => {
         </div>
       </div>
     );
+  }
+
+  // Phone-friendly tablet list: https://meatguideoverlay.web.app/tablets
+  if (window.location.pathname.replace(/\/+$/, '') === '/tablets') {
+    return <TabletStatusPage />;
   }
 
   return (

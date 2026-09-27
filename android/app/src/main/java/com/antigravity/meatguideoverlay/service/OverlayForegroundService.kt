@@ -93,7 +93,7 @@ class OverlayForegroundService : Service() {
         serviceScope.launch {
             repository.activePopupState.collect { info ->
                 Log.d(TAG, "Active popup config updated in service: v${info.version}, autoReboot=${info.autoRebootEnabled} (${info.autoRebootTime}), screenTimeout=${info.screenTimeoutMinutes}m, popupAutoClose=${info.popupAutoCloseMinutes}m")
-                deviceStatusReporter.report(info.version)
+                deviceStatusReporter.report(info)
                 // Reboot scheduling is disabled in this release. This also clears
                 // alarms persisted by an older installed version.
                 com.antigravity.meatguideoverlay.util.DevicePowerScheduler.cancelDailyReboot(
@@ -109,7 +109,7 @@ class OverlayForegroundService : Service() {
         serviceScope.launch(Dispatchers.IO) {
             while (isActive) {
                 delay(HEARTBEAT_INTERVAL_MS)
-                deviceStatusReporter.report(repository.activePopupState.value.version)
+                deviceStatusReporter.report(repository.activePopupState.value)
             }
         }
     }
