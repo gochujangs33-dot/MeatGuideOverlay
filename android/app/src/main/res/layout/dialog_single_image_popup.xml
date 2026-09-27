@@ -87,6 +87,21 @@
             android:textColor="#B3FFFFFF"
             android:textSize="18sp"
             android:textStyle="bold" />
+
+        <!-- Always-visible zoom hint; text follows the selected language -->
+        <TextView
+            android:id="@+id/tvZoomHint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:maxWidth="96dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:paddingBottom="4dp"
+            android:text="@string/popup_zoom_hint_ko"
+            android:textColor="#E6FFFFFF"
+            android:textSize="13sp" />
     </LinearLayout>
 
     <!-- TOP-RIGHT: Large close button -->

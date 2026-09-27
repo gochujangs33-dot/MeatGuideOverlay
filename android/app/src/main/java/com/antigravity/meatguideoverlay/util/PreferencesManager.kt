@@ -19,6 +19,9 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 class PreferencesManager(private val context: Context) {
 
     companion object {
+        /** The store's ordering kiosk app (erum 이오더). */
+        const val STORE_KIOSK_PACKAGE = "com.erum.epos"
+
         val KEY_SETUP_COMPLETED = booleanPreferencesKey("setup_completed")
         val KEY_SELECTED_KIOSK_PKG = stringPreferencesKey("selected_kiosk_pkg")
         val KEY_CHAR_X = intPreferencesKey("char_pos_x")
@@ -37,7 +40,7 @@ class PreferencesManager(private val context: Context) {
     }
 
     val selectedKioskPackageFlow: Flow<String> = context.dataStore.data.map { prefs ->
-        prefs[KEY_SELECTED_KIOSK_PKG] ?: ""
+        prefs[KEY_SELECTED_KIOSK_PKG] ?: STORE_KIOSK_PACKAGE
     }
 
     val charPositionFlow: Flow<Triple<Int, Int, String>> = context.dataStore.data.map { prefs ->
@@ -113,6 +116,6 @@ class PreferencesManager(private val context: Context) {
     }
 
     suspend fun getSelectedKioskPackage(): String {
-        return context.dataStore.data.first()[KEY_SELECTED_KIOSK_PKG] ?: ""
+        return context.dataStore.data.first()[KEY_SELECTED_KIOSK_PKG] ?: STORE_KIOSK_PACKAGE
     }
 }

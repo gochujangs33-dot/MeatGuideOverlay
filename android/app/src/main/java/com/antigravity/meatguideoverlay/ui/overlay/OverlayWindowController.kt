@@ -444,6 +444,14 @@ class OverlayWindowController(
             binding.btnLangJa.backgroundTintList = if (lang == "ja") activeColor else inactiveColor
             binding.btnLangJa.setTextColor(if (lang == "ja") 0xFFFFFFFF.toInt() else 0xFFCBD5E1.toInt())
 
+            binding.tvZoomHint.setText(
+                when (lang) {
+                    "en" -> R.string.popup_zoom_hint_en
+                    "ja" -> R.string.popup_zoom_hint_ja
+                    else -> R.string.popup_zoom_hint_ko
+                }
+            )
+
             // Decoding a multi-megapixel poster takes hundreds of milliseconds on
             // low-end tablets, so it runs off the main thread.
             posterLoadJob?.cancel()

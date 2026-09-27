@@ -71,19 +71,11 @@ class SetupWizardActivity : AppCompatActivity() {
         binding.tvOverlayPermStatus.setTextColor(
             getColor(if (hasOverlay) R.color.status_success else R.color.status_error)
         )
-
-        // Accessibility guide check
-        binding.tvAccessibilityPermStatus.text = "설정 상태 확인 필요"
-        binding.tvAccessibilityPermStatus.setTextColor(getColor(R.color.status_warning))
     }
 
     private fun setupAppSpinner() {
         installedAppPackages.clear()
         val appDisplayNames = mutableListOf<String>()
-
-        // Default test kiosk option
-        installedAppPackages.add("com.antigravity.testkiosk")
-        appDisplayNames.add("가상 테스트 키오스크 (com.antigravity.testkiosk)")
 
         // Query device for launchable packages
         val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
@@ -92,7 +84,7 @@ class SetupWizardActivity : AppCompatActivity() {
         val resolveInfos = packageManager.queryIntentActivities(mainIntent, 0)
         for (info in resolveInfos) {
             val pkg = info.activityInfo.packageName
-            if (pkg != packageName && pkg != "com.antigravity.testkiosk") {
+            if (pkg != packageName) {
                 val appName = info.loadLabel(packageManager).toString()
                 installedAppPackages.add(pkg)
                 appDisplayNames.add("$appName ($pkg)")
@@ -101,6 +93,12 @@ class SetupWizardActivity : AppCompatActivity() {
 
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, appDisplayNames)
         binding.spinnerKioskApps.adapter = adapter
+
+        // Preselect the store's kiosk app (erum 이오더) when it is installed.
+        val storeKioskIndex = installedAppPackages.indexOf(PreferencesManager.STORE_KIOSK_PACKAGE)
+        if (storeKioskIndex >= 0) {
+            binding.spinnerKioskApps.setSelection(storeKioskIndex)
+        }
     }
 
     private fun setupListeners() {
@@ -127,7 +125,7 @@ class SetupWizardActivity : AppCompatActivity() {
             val selectedPkg = if (selectedIndex in installedAppPackages.indices) {
                 installedAppPackages[selectedIndex]
             } else {
-                "com.antigravity.testkiosk"
+                PreferencesManager.STORE_KIOSK_PACKAGE
             }
 
             val deviceName = binding.etDeviceName.text?.toString()?.ifBlank { "테이블-01" } ?: "테이블-01"

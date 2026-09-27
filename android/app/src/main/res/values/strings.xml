@@ -22,6 +22,9 @@
     <string name="dialog_back">이전</string>
     <string name="default_speech_bubble">판매하는 고기가 궁금하면 클릭해주세요.</string>
     <string name="popup_image_desc">고기 부위 안내 팝업 이미지</string>
+    <string name="popup_zoom_hint_ko">✌ 두 손가락으로 확대</string>
+    <string name="popup_zoom_hint_en">✌ Pinch to zoom</string>
+    <string name="popup_zoom_hint_ja">✌ 2本指で拡大</string>
 
     <!-- Detail Attributes -->
     <string name="label_cut_position">부위 위치</string>

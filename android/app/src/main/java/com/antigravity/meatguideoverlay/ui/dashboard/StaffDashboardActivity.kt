@@ -76,7 +76,7 @@ class StaffDashboardActivity : AppCompatActivity() {
     private fun observeData() {
         lifecycleScope.launch {
             preferencesManager.selectedKioskPackageFlow.collect { pkg ->
-                binding.tvDashKioskPackage.text = pkg.ifBlank { "미지정 (기본 테스트 키오스크)" }
+                binding.tvDashKioskPackage.text = pkg.ifBlank { "미지정" }
             }
         }
 
