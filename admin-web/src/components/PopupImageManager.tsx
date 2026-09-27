@@ -275,7 +275,6 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
   const hasPowerSettingsChanged =
     autoRebootEnabled !== (activePopup.autoRebootEnabled === true) ||
     autoRebootTime !== (activePopup.autoRebootTime || '10:00') ||
-    screenTimeoutMinutes !== (activePopup.screenTimeoutMinutes ?? 60) ||
     popupAutoCloseMinutes !== (activePopup.popupAutoCloseMinutes ?? 5);
 
   const hasChanges = hasAnyFileSelected || hasBubbleTextChanged || hasPowerSettingsChanged;
@@ -297,7 +296,8 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
         {
           autoRebootEnabled,
           autoRebootTime,
-          screenTimeoutMinutes,
+          // Tablets stay on while open; staff turn the screen off after closing.
+          screenTimeoutMinutes: 0,
           popupAutoCloseMinutes,
           characterPosition
         }
@@ -1133,99 +1133,6 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                 </div>
               </div>
 
-              {/* B. Screen Auto Timeout (Sleep mode) */}
-              <div style={{
-                backgroundColor: '#F8FAFC',
-                border: '1px solid #E2E8F0',
-                borderRadius: '12px',
-                padding: '14px 16px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                  <Moon size={16} color="#7C3AED" />
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
-                    화면 자동 꺼짐 (절전 시간)
-                  </span>
-                  <span style={{ fontSize: '11px', color: '#64748B' }}>
-                    (미사용 시 절전, 터치 시 즉시 켜짐)
-                  </span>
-                </div>
-
-                {/* Quick Option Chips */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
-                  {[
-                    { label: '15분', value: 15 },
-                    { label: '30분', value: 30 },
-                    { label: '1시간 (기본)', value: 60 },
-                    { label: '2시간', value: 120 },
-                    { label: '항상 켜짐 (절전 끄기)', value: 0 }
-                  ].map((option) => {
-                    const isSelected = screenTimeoutMinutes === option.value && !isCustomTimeout;
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => {
-                          setScreenTimeoutMinutes(option.value);
-                          setIsCustomTimeout(false);
-                        }}
-                        style={{
-                          padding: '6px 12px',
-                          borderRadius: '8px',
-                          border: isSelected ? '1.5px solid #7C3AED' : '1px solid #CBD5E1',
-                          backgroundColor: isSelected ? '#F5F3FF' : '#FFFFFF',
-                          color: isSelected ? '#7C3AED' : '#475569',
-                          fontSize: '12px',
-                          fontWeight: isSelected ? 800 : 600,
-                          cursor: 'pointer',
-                          transition: 'all 0.12s ease'
-                        }}
-                      >
-                        {option.label}
-                      </button>
-                    );
-                  })}
-
-                  <button
-                    type="button"
-                    onClick={() => setIsCustomTimeout(true)}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: '8px',
-                      border: isCustomTimeout ? '1.5px solid #7C3AED' : '1px solid #CBD5E1',
-                      backgroundColor: isCustomTimeout ? '#F5F3FF' : '#FFFFFF',
-                      color: isCustomTimeout ? '#7C3AED' : '#475569',
-                      fontSize: '12px',
-                      fontWeight: isCustomTimeout ? 800 : 600,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    직접 입력
-                  </button>
-                </div>
-
-                {isCustomTimeout && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
-                    <span style={{ fontSize: '12px', color: '#475569' }}>절전 대기 시간:</span>
-                    <input
-                      type="number"
-                      min="1"
-                      max="720"
-                      value={screenTimeoutMinutes}
-                      onChange={(e) => setScreenTimeoutMinutes(Math.max(1, parseInt(e.target.value) || 1))}
-                      style={{
-                        width: '80px',
-                        padding: '4px 8px',
-                        borderRadius: '6px',
-                        border: '1px solid #CBD5E1',
-                        fontSize: '12px',
-                        fontWeight: 700
-                      }}
-                    />
-                    <span style={{ fontSize: '12px', color: '#64748B' }}>분 미사용 시 화면 꺼짐</span>
-                  </div>
-                )}
-              </div>
-
               {/* C. Popup Inactivity Auto-Close */}
               <div style={{
                 backgroundColor: '#F8FAFC',
@@ -1384,7 +1291,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#64748B' }}>화면 절전 시간:</span>
                   <span style={{ fontWeight: 700, color: '#7C3AED' }}>
-                    {activePopup.screenTimeoutMinutes === 0 ? '항상 켜짐' : `${activePopup.screenTimeoutMinutes || 60}분 미사용 시 꺼짐`}
+                    항상 켜짐 (영업 종료 후 직접 끄기)
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
