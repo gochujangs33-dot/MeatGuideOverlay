@@ -1,7 +1,7 @@
 ﻿{
-    "versionCode":  19,
-    "versionName":  "1.0.18",
-    "downloadUrl":  "https://meatguideoverlay.web.app/updates/meatguide-overlay-19.bin",
-    "sha256":  "5c5084573756a6098d9abcf6a6eace957e59813dc85ba997812fcff1cf1d8751",
-    "notes":  "좌측 상단 오버레이 캐릭터 말풍선 3초 주기 다국어 자동 순환 적용"
+    "versionCode":  20,
+    "versionName":  "1.0.19",
+    "downloadUrl":  "https://meatguideoverlay.web.app/updates/meatguide-overlay-20.bin",
+    "sha256":  "57b11854bc18cc00aeceac37331057edae04291a16b871562a53122a9368b3a9",
+    "notes":  "키오스크 오류 안내창 표시 수정, 전원 메뉴 버튼 수정, 포스터 다운로드 재시도, 수동 동기화 개선, 메모리 사용 개선"
 }
