@@ -381,12 +381,8 @@ class OverlayWindowController(
         binding: OverlayFloatingCharacterBinding,
         layoutParams: WindowManager.LayoutParams
     ) {
-        val currentX = layoutParams.x
-        val centerX = screenWidth / 2
-        val isLeft = (currentX + 70 < centerX)
-        val targetPos = if (isLeft) "LEFT_TOP" else "RIGHT_TOP"
-
-        applyCharacterPosition(targetPos)
+        // The helper is fixed to the top-left corner; a drag always returns it there.
+        applyCharacterPosition(DEFAULT_CHARACTER_POSITION)
     }
 
     // ==========================================

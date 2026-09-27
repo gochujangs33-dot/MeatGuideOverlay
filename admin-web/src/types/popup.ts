@@ -18,7 +18,7 @@ export interface ActivePopupInfo {
   screenTimeoutMinutes?: number; // Default: 60 (1 hour), 0 for always on
   popupAutoCloseMinutes?: number; // Default: 5; 0 disables inactivity auto-close
   // Character Placement Position (Batch applied to all tablets)
-  characterPosition?: 'RIGHT_TOP' | 'LEFT_TOP'; // Default: "RIGHT_TOP"
+  characterPosition?: 'RIGHT_TOP' | 'LEFT_TOP'; // Always "LEFT_TOP" (fixed top-left)
 }
 
 export interface DeviceStatus {

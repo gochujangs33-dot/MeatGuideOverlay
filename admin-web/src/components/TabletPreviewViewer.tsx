@@ -25,7 +25,7 @@ export const TabletPreviewViewer: React.FC<Props> = ({
   activeSource,
   onSourceChange,
   bubbleTexts,
-  characterPosition = 'RIGHT_TOP'
+  characterPosition = 'LEFT_TOP'
 }) => {
   const [isLandscape, setIsLandscape] = useState<boolean>(true);
   const [aspectRatio, setAspectRatio] = useState<'16:10' | '16:9' | '4:3'>('16:10');

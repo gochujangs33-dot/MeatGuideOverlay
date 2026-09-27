@@ -33,7 +33,7 @@ export const DEFAULT_ACTIVE_POPUP: ActivePopupInfo = {
   autoRebootTime: '10:00',
   screenTimeoutMinutes: 60,
   popupAutoCloseMinutes: 5,
-  characterPosition: 'RIGHT_TOP'
+  characterPosition: 'LEFT_TOP'
 };
 
 /**
@@ -251,7 +251,8 @@ export async function uploadAndApplyMultiLangPopup(
     popupAutoCloseMinutes: powerSettings?.popupAutoCloseMinutes !== undefined
       ? Math.max(0, Math.min(720, Math.floor(powerSettings.popupAutoCloseMinutes)))
       : (currentInfo.popupAutoCloseMinutes ?? 5),
-    characterPosition: powerSettings?.characterPosition || currentInfo.characterPosition || 'RIGHT_TOP'
+    // Tablets always keep the helper at the top-left corner.
+    characterPosition: 'LEFT_TOP'
   };
 
   try {
