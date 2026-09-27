@@ -12,8 +12,7 @@ import {
   Languages,
   Wand2,
   Power,
-  Clock,
-  Moon
+  Clock
 } from 'lucide-react';
 import { ActivePopupInfo, DeviceStatus, SupportedLanguage } from '../types/popup';
 import { collection, firestore, onSnapshot } from '../services/firebase';
@@ -77,9 +76,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
   // Tablet Power & Screen Timeout Settings
   const [autoRebootEnabled, setAutoRebootEnabled] = useState<boolean>(false);
   const [autoRebootTime, setAutoRebootTime] = useState<string>('10:00');
-  const [screenTimeoutMinutes, setScreenTimeoutMinutes] = useState<number>(60);
   const [popupAutoCloseMinutes, setPopupAutoCloseMinutes] = useState<number>(5);
-  const [isCustomTimeout, setIsCustomTimeout] = useState<boolean>(false);
   // The kiosk helper is fixed to the top-left corner on every tablet.
   const characterPosition = 'LEFT_TOP' as const;
 
@@ -110,11 +107,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
       });
       setAutoRebootEnabled(false);
       setAutoRebootTime(info.autoRebootTime || '10:00');
-      setScreenTimeoutMinutes(info.screenTimeoutMinutes ?? 60);
       setPopupAutoCloseMinutes(Math.max(0, Math.min(720, info.popupAutoCloseMinutes ?? 5)));
-      if (info.screenTimeoutMinutes !== undefined && ![0, 15, 30, 60, 120].includes(info.screenTimeoutMinutes)) {
-        setIsCustomTimeout(true);
-      }
     }).catch(console.error);
 
     const unsubscribe = subscribeToActivePopup((info) => {
@@ -126,11 +119,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
       });
       setAutoRebootEnabled(false);
       setAutoRebootTime(info.autoRebootTime || '10:00');
-      setScreenTimeoutMinutes(info.screenTimeoutMinutes ?? 60);
       setPopupAutoCloseMinutes(Math.max(0, Math.min(720, info.popupAutoCloseMinutes ?? 5)));
-      if (info.screenTimeoutMinutes !== undefined && ![0, 15, 30, 60, 120].includes(info.screenTimeoutMinutes)) {
-        setIsCustomTimeout(true);
-      }
     });
 
     return () => unsubscribe();
