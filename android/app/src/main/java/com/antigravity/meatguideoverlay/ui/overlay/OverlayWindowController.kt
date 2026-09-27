@@ -26,6 +26,7 @@ import com.antigravity.meatguideoverlay.databinding.DialogKioskErrorBinding
 import com.antigravity.meatguideoverlay.databinding.DialogSingleImagePopupBinding
 import com.antigravity.meatguideoverlay.databinding.OverlayFloatingCharacterBinding
 import com.antigravity.meatguideoverlay.service.KioskErrorAccessibilityService
+import com.antigravity.meatguideoverlay.util.PosterSampling
 import com.antigravity.meatguideoverlay.util.PreferencesManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,7 +35,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import java.io.File
+import kotlinx.coroutines.withContext
+import java.io.InputStream
 
 /**
  * Overlay Window Controller for MeatGuideOverlay.
@@ -80,6 +82,7 @@ class OverlayWindowController(
     // Single Image Popup Dialog Elements
     private var popupBinding: DialogSingleImagePopupBinding? = null
     private var popupLayoutParams: WindowManager.LayoutParams? = null
+    private var posterLoadJob: Job? = null
     private var isPopupAttached = false
     private val popupAutoCloseRunnable = Runnable {
         if (isPopupAttached) {
@@ -441,47 +444,21 @@ class OverlayWindowController(
             binding.btnLangJa.backgroundTintList = if (lang == "ja") activeColor else inactiveColor
             binding.btnLangJa.setTextColor(if (lang == "ja") 0xFFFFFFFF.toInt() else 0xFFCBD5E1.toInt())
 
-            val imageFile = popupImageRepository.getCurrentImageFile(lang)
-            var bitmap: Bitmap? = null
-            if (imageFile != null && imageFile.exists() && imageFile.length() > 0L) {
-                try {
-                    // Keep roughly 3x the display resolution in memory so text remains
-                    // crisp while the customer pinch-zooms the poster.
-                    bitmap = decodeSampledBitmapFromFile(
-                        imageFile.absolutePath,
-                        screenWidth * 3,
-                        screenHeight * 3
-                    )
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed decoding image file for $lang: ${e.message}")
+            // Decoding a multi-megapixel poster takes hundreds of milliseconds on
+            // low-end tablets, so it runs off the main thread.
+            posterLoadJob?.cancel()
+            posterLoadJob = scope.launch {
+                val bitmap = withContext(Dispatchers.Default) { decodePosterFor(lang) }
+                if (popupBinding !== binding) return@launch // popup closed meanwhile
+                if (bitmap != null) {
+                    binding.ivPopupImage.setImageBitmap(bitmap)
+                    Log.i(TAG, "Loaded popup bitmap $lang: ${bitmap.width}x${bitmap.height}")
+                } else {
+                    binding.ivPopupImage.setImageResource(R.drawable.pork_guide_poster)
                 }
+                binding.tvLoadingHint.visibility = View.GONE
+                binding.ivPopupImage.resetScaleAndPosition()
             }
-
-            // Fallback directly to assets if file is missing or failed decoding
-            if (bitmap == null) {
-                val assetName = when (lang.lowercase()) {
-                    "en" -> "pork_guide_poster_en_hq.png"
-                    "ja" -> "pork_guide_poster_ja_hq.png"
-                    else -> "pork_guide_poster_ko_hq.png"
-                }
-                try {
-                    context.assets.open(assetName).use { stream ->
-                        bitmap = BitmapFactory.decodeStream(stream)
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed loading asset image $assetName: ${e.message}")
-                }
-            }
-
-            val loadedBitmap = bitmap
-            if (loadedBitmap != null) {
-                binding.ivPopupImage.setImageBitmap(loadedBitmap)
-                Log.i(TAG, "Loaded popup bitmap $lang: ${loadedBitmap.width}x${loadedBitmap.height}")
-            } else {
-                binding.ivPopupImage.setImageResource(R.drawable.pork_guide_poster)
-            }
-            binding.tvLoadingHint.visibility = View.GONE
-            binding.ivPopupImage.resetScaleAndPosition()
         }
 
         // Any touch inside the popup (including image pan/zoom and empty backdrop
@@ -546,6 +523,8 @@ class OverlayWindowController(
 
     fun closeSingleImagePopup() {
         if (!isPopupAttached || popupBinding == null) return
+
+        posterLoadJob?.cancel()
 
         cancelPopupAutoCloseTimer()
 
@@ -700,33 +679,42 @@ class OverlayWindowController(
         dismissErrorDialog()
     }
 
-    /**
-     * Efficient memory-safe bitmap decoding with inSampleSize downsampling.
-     */
-    private fun decodeSampledBitmapFromFile(path: String, reqWidth: Int, reqHeight: Int): Bitmap? {
-        val options = BitmapFactory.Options().apply {
-            inJustDecodeBounds = true
+    /** Decodes the cached poster for [lang], falling back to the bundled asset. */
+    private fun decodePosterFor(lang: String): Bitmap? {
+        // Keep roughly 3x the display resolution so text stays crisp while the
+        // customer pinch-zooms; PosterSampling caps oversized uploads.
+        val reqWidth = screenWidth * 3
+        val reqHeight = screenHeight * 3
+        val imageFile = popupImageRepository.getCurrentImageFile(lang)
+        if (imageFile != null && imageFile.exists() && imageFile.length() > 0L) {
+            decodeSampled(reqWidth, reqHeight) { imageFile.inputStream() }?.let { return it }
         }
-        BitmapFactory.decodeFile(path, options)
+        val assetName = when (lang.lowercase()) {
+            "en" -> "pork_guide_poster_en_hq.png"
+            "ja" -> "pork_guide_poster_ja_hq.png"
+            else -> "pork_guide_poster_ko_hq.png"
+        }
+        return decodeSampled(reqWidth, reqHeight) { context.assets.open(assetName) }
+    }
 
-        var inSampleSize = 1
-        val height = options.outHeight
-        val width = options.outWidth
+    private fun decodeSampled(reqWidth: Int, reqHeight: Int, open: () -> InputStream): Bitmap? {
+        return try {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            open().use { BitmapFactory.decodeStream(it, null, bounds) }
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
 
-        if (height > reqHeight || width > reqWidth) {
-            val halfHeight = height / 2
-            val halfWidth = width / 2
-            while ((halfHeight / inSampleSize) >= reqHeight && (halfWidth / inSampleSize) >= reqWidth) {
-                inSampleSize *= 2
+            val options = BitmapFactory.Options().apply {
+                inSampleSize = PosterSampling.inSampleSize(bounds.outWidth, bounds.outHeight, reqWidth, reqHeight)
+                // Preserve full color depth around small glyph edges.
+                inPreferredConfig = Bitmap.Config.ARGB_8888
             }
+            open().use { BitmapFactory.decodeStream(it, null, options) }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed decoding popup poster: ${e.message}")
+            null
+        } catch (e: OutOfMemoryError) {
+            Log.e(TAG, "Not enough memory to decode popup poster", e)
+            null
         }
-
-        options.inJustDecodeBounds = false
-        options.inSampleSize = inSampleSize
-        // Preserve full color depth around small glyph edges. Only one poster is
-        // displayed at a time, so the quality gain is worth the larger bitmap.
-        options.inPreferredConfig = Bitmap.Config.ARGB_8888
-
-        return BitmapFactory.decodeFile(path, options)
     }
 }
