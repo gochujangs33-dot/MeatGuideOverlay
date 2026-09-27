@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
@@ -93,6 +94,10 @@ class PopupImageRepository(
             delay(waitMs)
         }
 
+        applyRemoteInfo(remoteInfo)
+    }
+
+    private suspend fun applyRemoteInfo(remoteInfo: ActivePopupInfo) {
         if (remoteInfo != _activePopupState.value) {
             localDataSource.saveActivePopupInfo(remoteInfo)
             _activePopupState.value = remoteInfo
@@ -131,12 +136,16 @@ class PopupImageRepository(
     private fun retryDelayMs(attempt: Int): Long =
         (INITIAL_RETRY_DELAY_MS shl attempt.coerceAtMost(5)).coerceAtMost(MAX_RETRY_DELAY_MS)
 
-    suspend fun refreshSync(): Boolean {
-        val file = localDataSource.ensureLocalImageAvailable("ko")
-        _imageFileState.value = file
-        val info = localDataSource.getActivePopupInfo()
-        _activePopupState.value = info
-        return file != null
+    /**
+     * Manual sync for the staff dashboard: reads the configuration straight from the
+     * server and downloads any missing posters. Returns false when the server is
+     * unreachable or a poster could not be downloaded.
+     */
+    suspend fun refreshSync(): Boolean = withContext(Dispatchers.IO) {
+        val remoteInfo = firebaseDataSource.fetchActivePopup() ?: return@withContext false
+        if (!downloadMissingImages(remoteInfo)) return@withContext false
+        applyRemoteInfo(remoteInfo)
+        true
     }
 
     fun getCurrentImageFile(lang: String = "ko"): File? {

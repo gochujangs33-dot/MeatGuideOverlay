@@ -12,6 +12,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -142,6 +143,46 @@ class PopupImageRepositoryTest {
         assertEquals(1, remote.downloadAttempts[koB])
     }
 
+    @Test
+    fun manualSyncFetchesServerStateAndAppliesNewPoster() = runTest {
+        val store = storeWith(popup(version = 7, ko = koA))
+        val remote = FakeRemote().apply { serverState = popup(version = 8, ko = koB) }
+        val repository = repositoryFor(store, remote)
+
+        val synced = repository.refreshSync()
+
+        assertTrue(synced)
+        assertEquals(8L, repository.activePopupState.value.version)
+        assertEquals(koB, store.imageSources["ko"])
+    }
+
+    @Test
+    fun manualSyncReportsFailureWhenServerIsUnreachable() = runTest {
+        val store = storeWith(popup(version = 7, ko = koA))
+        val remote = FakeRemote().apply { serverState = null }
+        val repository = repositoryFor(store, remote)
+
+        val synced = repository.refreshSync()
+
+        assertFalse(synced)
+        assertEquals(7L, repository.activePopupState.value.version)
+    }
+
+    @Test
+    fun manualSyncReportsFailureWhenPosterDownloadFails() = runTest {
+        val store = storeWith(popup(version = 7, ko = koA))
+        val remote = FakeRemote().apply {
+            serverState = popup(version = 8, ko = koB)
+            failuresBeforeSuccess[koB] = 1
+        }
+        val repository = repositoryFor(store, remote)
+
+        val synced = repository.refreshSync()
+
+        assertFalse(synced)
+        assertEquals(7L, repository.activePopupState.value.version)
+    }
+
     private fun popup(
         version: Long,
         ko: String,
@@ -212,8 +253,11 @@ class PopupImageRepositoryTest {
         val snapshots = MutableStateFlow<ActivePopupInfo?>(null)
         val failuresBeforeSuccess = mutableMapOf<String, Int>()
         val downloadAttempts = mutableMapOf<String, Int>()
+        var serverState: ActivePopupInfo? = null // null = server unreachable
 
         override fun observeActivePopup(): Flow<ActivePopupInfo?> = snapshots
+
+        override suspend fun fetchActivePopup(): ActivePopupInfo? = serverState
 
         override fun downloadImageStream(imageUrl: String): InputStream? {
             downloadAttempts[imageUrl] = (downloadAttempts[imageUrl] ?: 0) + 1

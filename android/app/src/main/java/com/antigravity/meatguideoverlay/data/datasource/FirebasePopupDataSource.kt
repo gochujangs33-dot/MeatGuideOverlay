@@ -7,9 +7,11 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.tasks.await
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
@@ -69,47 +71,7 @@ class FirebasePopupDataSource : PopupRemoteSource {
 
                 if (snapshot != null && snapshot.exists()) {
                     try {
-                        val imageUrl = snapshot.getString("imageUrl") ?: ""
-                        val imageUrlKo = snapshot.getString("imageUrlKo") ?: imageUrl
-                        val imageUrlEn = snapshot.getString("imageUrlEn") ?: imageUrl
-                        val imageUrlJa = snapshot.getString("imageUrlJa") ?: imageUrl
-                        val version = snapshot.getLong("version") ?: 1L
-                        val updatedAt = snapshot.getString("updatedAt") ?: ""
-                        val fileName = snapshot.getString("fileName") ?: "active_image.jpg"
-                        val fileSize = snapshot.getLong("fileSize") ?: 0L
-                        val checksum = snapshot.getString("checksum") ?: ""
-                        val bubbleText = snapshot.getString("bubbleText") ?: "이 고기가 어떤 부위인지 궁금하신가요?"
-                        val bubbleTextKo = snapshot.getString("bubbleTextKo") ?: bubbleText
-                        val bubbleTextEn = snapshot.getString("bubbleTextEn") ?: "Wondering which cut of meat this is?"
-                        val bubbleTextJa = snapshot.getString("bubbleTextJa") ?: "このお肉がどの部位か気になりますか？"
-                        // Missing legacy values must never silently enable a reboot schedule.
-                        val autoRebootEnabled = snapshot.getBoolean("autoRebootEnabled") ?: false
-                        val autoRebootTime = snapshot.getString("autoRebootTime") ?: "10:00"
-                        val screenTimeoutMinutes = snapshot.getLong("screenTimeoutMinutes")?.toInt() ?: 60
-                        val popupAutoCloseMinutes = snapshot.getLong("popupAutoCloseMinutes")?.toInt() ?: 5
-                        val characterPosition = snapshot.getString("characterPosition") ?: "RIGHT_TOP"
-
-                        val popupInfo = ActivePopupInfo(
-                            imageUrl = imageUrl,
-                            imageUrlKo = imageUrlKo,
-                            imageUrlEn = imageUrlEn,
-                            imageUrlJa = imageUrlJa,
-                            version = version,
-                            updatedAt = updatedAt,
-                            fileName = fileName,
-                            fileSize = fileSize,
-                            checksum = checksum,
-                            bubbleText = bubbleText,
-                            bubbleTextKo = bubbleTextKo,
-                            bubbleTextEn = bubbleTextEn,
-                            bubbleTextJa = bubbleTextJa,
-                            autoRebootEnabled = autoRebootEnabled,
-                            autoRebootTime = autoRebootTime,
-                            screenTimeoutMinutes = screenTimeoutMinutes,
-                            popupAutoCloseMinutes = popupAutoCloseMinutes,
-                            characterPosition = characterPosition
-                        )
-                        trySend(popupInfo)
+                        trySend(toPopupInfo(snapshot))
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed parsing active popup snapshot: ${e.message}", e)
                     }
@@ -147,6 +109,64 @@ class FirebasePopupDataSource : PopupRemoteSource {
             if (authStateListener != null) {
                 firebaseAuth?.removeAuthStateListener(authStateListener)
             }
+        }
+    }
+
+    private fun toPopupInfo(snapshot: DocumentSnapshot): ActivePopupInfo {
+        val imageUrl = snapshot.getString("imageUrl") ?: ""
+        val imageUrlKo = snapshot.getString("imageUrlKo") ?: imageUrl
+        val imageUrlEn = snapshot.getString("imageUrlEn") ?: imageUrl
+        val imageUrlJa = snapshot.getString("imageUrlJa") ?: imageUrl
+        val version = snapshot.getLong("version") ?: 1L
+        val updatedAt = snapshot.getString("updatedAt") ?: ""
+        val fileName = snapshot.getString("fileName") ?: "active_image.jpg"
+        val fileSize = snapshot.getLong("fileSize") ?: 0L
+        val checksum = snapshot.getString("checksum") ?: ""
+        val bubbleText = snapshot.getString("bubbleText") ?: "이 고기가 어떤 부위인지 궁금하신가요?"
+        val bubbleTextKo = snapshot.getString("bubbleTextKo") ?: bubbleText
+        val bubbleTextEn = snapshot.getString("bubbleTextEn") ?: "Wondering which cut of meat this is?"
+        val bubbleTextJa = snapshot.getString("bubbleTextJa") ?: "このお肉がどの部位か気になりますか？"
+        // Missing legacy values must never silently enable a reboot schedule.
+        val autoRebootEnabled = snapshot.getBoolean("autoRebootEnabled") ?: false
+        val autoRebootTime = snapshot.getString("autoRebootTime") ?: "10:00"
+        val screenTimeoutMinutes = snapshot.getLong("screenTimeoutMinutes")?.toInt() ?: 60
+        val popupAutoCloseMinutes = snapshot.getLong("popupAutoCloseMinutes")?.toInt() ?: 5
+        val characterPosition = snapshot.getString("characterPosition") ?: "RIGHT_TOP"
+
+        return ActivePopupInfo(
+            imageUrl = imageUrl,
+            imageUrlKo = imageUrlKo,
+            imageUrlEn = imageUrlEn,
+            imageUrlJa = imageUrlJa,
+            version = version,
+            updatedAt = updatedAt,
+            fileName = fileName,
+            fileSize = fileSize,
+            checksum = checksum,
+            bubbleText = bubbleText,
+            bubbleTextKo = bubbleTextKo,
+            bubbleTextEn = bubbleTextEn,
+            bubbleTextJa = bubbleTextJa,
+            autoRebootEnabled = autoRebootEnabled,
+            autoRebootTime = autoRebootTime,
+            screenTimeoutMinutes = screenTimeoutMinutes,
+            popupAutoCloseMinutes = popupAutoCloseMinutes,
+            characterPosition = characterPosition
+        )
+    }
+
+    override suspend fun fetchActivePopup(): ActivePopupInfo? {
+        val db = firestore ?: return null
+        return try {
+            val firebaseAuth = auth ?: return null
+            if (firebaseAuth.currentUser == null) firebaseAuth.signInAnonymously().await()
+            val snapshot = db.collection(COLLECTION_ACTIVE_POPUP).document(DOC_CURRENT)
+                .get(Source.SERVER)
+                .await()
+            if (snapshot.exists()) toPopupInfo(snapshot) else null
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed fetching active popup from server: ${e.message}")
+            null
         }
     }
 

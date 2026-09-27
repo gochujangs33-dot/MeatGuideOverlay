@@ -24,6 +24,9 @@ interface PopupLocalStore {
 interface PopupRemoteSource {
     fun observeActivePopup(): Flow<ActivePopupInfo?>
 
+    /** Reads the current configuration directly from the server; null when unreachable. */
+    suspend fun fetchActivePopup(): ActivePopupInfo?
+
     /** Opens the poster at [imageUrl], or returns null when it cannot be downloaded. */
     fun downloadImageStream(imageUrl: String): InputStream?
 }
