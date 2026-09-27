@@ -1,7 +1,7 @@
 ﻿{
-    "versionCode":  20,
-    "versionName":  "1.0.19",
-    "downloadUrl":  "https://meatguideoverlay.web.app/updates/meatguide-overlay-20.bin",
-    "sha256":  "57b11854bc18cc00aeceac37331057edae04291a16b871562a53122a9368b3a9",
-    "notes":  "키오스크 오류 안내창 표시 수정, 전원 메뉴 버튼 수정, 포스터 다운로드 재시도, 수동 동기화 개선, 메모리 사용 개선"
+    "versionCode":  21,
+    "versionName":  "1.0.20",
+    "downloadUrl":  "https://meatguideoverlay.web.app/updates/meatguide-overlay-21.bin",
+    "sha256":  "b0f3f273650d9883d7505e0722a88400b365c12d6265d6c69efe7e7098699823",
+    "notes":  "말풍선 줄바꿈 개선, 포스터 확대 안내 문구 추가, 설정 화면 정리(키오스크 앱 기본 선택)"
 }

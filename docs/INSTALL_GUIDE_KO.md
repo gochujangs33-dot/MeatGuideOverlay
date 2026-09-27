@@ -23,10 +23,31 @@
 1. 태블릿의 `설정` -> `보안` (또는 `생체 인식 및 보안`)으로 이동합니다.
 2. `출처를 알 수 없는 앱 설치`를 허용합니다.
 
-### 3.2 ADB를 통한 설치 (권장)
+### 3.2 ADB로 설치하면서 권한 미리 켜기 (권장)
+태블릿을 USB로 연결하고 `USB 디버깅`을 켠 뒤, PC에서 아래 스크립트를 실행합니다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\install-tablet.ps1
+```
+
+스크립트가 하는 일:
+1. 최신 APK 설치 (`MeatGuideOverlay-latest-release.apk`)
+2. **다른 앱 위에 표시** 권한 허용
+3. **접근성 오류 감지 서비스** 켜기
+4. **시스템 설정 변경** 허용 (영업 중 화면 켜짐 유지)
+5. 배터리 최적화 예외 등록 (재부팅 후 자동 실행 유지)
+
+태블릿이 여러 대 연결되어 있으면 `-Serial <기기 시리얼>`을 붙입니다(`adb devices`로 확인). 끝나면 태블릿에서 앱을 실행해 설정 마법사에서 키오스크 앱(erum 이오더)과 태블릿 이름만 저장하면 됩니다.
+
+직접 명령어로 할 때:
 ```bash
 adb install -r MeatGuideOverlay-latest-release.apk
+adb shell appops set com.antigravity.meatguideoverlay SYSTEM_ALERT_WINDOW allow
+adb shell appops set com.antigravity.meatguideoverlay WRITE_SETTINGS allow
+adb shell settings put secure enabled_accessibility_services com.antigravity.meatguideoverlay/com.antigravity.meatguideoverlay.service.KioskErrorAccessibilityService
+adb shell settings put secure accessibility_enabled 1
 ```
+(마지막 두 줄은 다른 접근성 서비스를 쓰고 있다면 목록을 덮어쓰므로 스크립트 사용을 권장합니다.)
 
 ### 3.3 USB 또는 파일 전송
 1. APK 파일을 태블릿의 `Download` 폴더로 복사합니다.
