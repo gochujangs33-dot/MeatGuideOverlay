@@ -116,64 +116,44 @@ async function uploadSingleFile(
   }
 }
 
+function withDefaults(data: ActivePopupInfo): ActivePopupInfo {
+  return {
+    ...DEFAULT_ACTIVE_POPUP,
+    ...data,
+    imageUrlKo: data.imageUrlKo || data.imageUrl || DEFAULT_ACTIVE_POPUP.imageUrlKo,
+    imageUrlEn: data.imageUrlEn || data.imageUrl || DEFAULT_ACTIVE_POPUP.imageUrlEn,
+    imageUrlJa: data.imageUrlJa || data.imageUrl || DEFAULT_ACTIVE_POPUP.imageUrlJa,
+    bubbleTextKo: data.bubbleTextKo || data.bubbleText || DEFAULT_ACTIVE_POPUP.bubbleTextKo,
+    bubbleTextEn: data.bubbleTextEn || DEFAULT_ACTIVE_POPUP.bubbleTextEn,
+    bubbleTextJa: data.bubbleTextJa || DEFAULT_ACTIVE_POPUP.bubbleTextJa
+  };
+}
+
 /**
  * Fetches the currently active popup info from Firestore.
+ * Defaults are used only when no document exists yet. A read failure rejects so
+ * the console never saves on top of state it could not load (which would reset
+ * the version and overwrite the real poster URLs).
  */
 export async function fetchActivePopup(): Promise<ActivePopupInfo> {
-  try {
-    const docRef = doc(firestore, COLLECTION_NAME, DOC_CURRENT);
-    const snapshot = await getDoc(docRef);
-    if (snapshot.exists()) {
-      const data = snapshot.data() as ActivePopupInfo;
-      return {
-        ...DEFAULT_ACTIVE_POPUP,
-        ...data,
-        imageUrlKo: data.imageUrlKo || data.imageUrl || DEFAULT_ACTIVE_POPUP.imageUrlKo,
-        imageUrlEn: data.imageUrlEn || data.imageUrl || DEFAULT_ACTIVE_POPUP.imageUrlEn,
-        imageUrlJa: data.imageUrlJa || data.imageUrl || DEFAULT_ACTIVE_POPUP.imageUrlJa,
-        bubbleTextKo: data.bubbleTextKo || data.bubbleText || DEFAULT_ACTIVE_POPUP.bubbleTextKo,
-        bubbleTextEn: data.bubbleTextEn || DEFAULT_ACTIVE_POPUP.bubbleTextEn,
-        bubbleTextJa: data.bubbleTextJa || DEFAULT_ACTIVE_POPUP.bubbleTextJa
-      };
-    }
-  } catch (error) {
-    console.warn('Failed to fetch from Firestore, checking localStorage:', error);
-  }
-
-  try {
-    const cached = localStorage.getItem('meatguide_active_popup');
-    if (cached) {
-      return JSON.parse(cached) as ActivePopupInfo;
-    }
-  } catch (_) {}
-
-  return DEFAULT_ACTIVE_POPUP;
+  const snapshot = await getDoc(doc(firestore, COLLECTION_NAME, DOC_CURRENT));
+  return snapshot.exists() ? withDefaults(snapshot.data() as ActivePopupInfo) : DEFAULT_ACTIVE_POPUP;
 }
 
 /**
  * Subscribes to real-time changes of the active popup info.
+ * Listener errors go to [onError]; the last known state is kept.
  */
-export function subscribeToActivePopup(callback: (info: ActivePopupInfo) => void): () => void {
+export function subscribeToActivePopup(
+  callback: (info: ActivePopupInfo) => void,
+  onError: (error: Error) => void
+): () => void {
   const docRef = doc(firestore, COLLECTION_NAME, DOC_CURRENT);
   return onSnapshot(docRef, (snapshot) => {
-    if (snapshot.exists()) {
-      const data = snapshot.data() as ActivePopupInfo;
-      callback({
-        ...DEFAULT_ACTIVE_POPUP,
-        ...data,
-        imageUrlKo: data.imageUrlKo || data.imageUrl || DEFAULT_ACTIVE_POPUP.imageUrlKo,
-        imageUrlEn: data.imageUrlEn || data.imageUrl || DEFAULT_ACTIVE_POPUP.imageUrlEn,
-        imageUrlJa: data.imageUrlJa || data.imageUrl || DEFAULT_ACTIVE_POPUP.imageUrlJa,
-        bubbleTextKo: data.bubbleTextKo || data.bubbleText || DEFAULT_ACTIVE_POPUP.bubbleTextKo,
-        bubbleTextEn: data.bubbleTextEn || DEFAULT_ACTIVE_POPUP.bubbleTextEn,
-        bubbleTextJa: data.bubbleTextJa || DEFAULT_ACTIVE_POPUP.bubbleTextJa
-      });
-    } else {
-      callback(DEFAULT_ACTIVE_POPUP);
-    }
+    callback(snapshot.exists() ? withDefaults(snapshot.data() as ActivePopupInfo) : DEFAULT_ACTIVE_POPUP);
   }, (error) => {
-    console.warn('Snapshot listener error, fallback to default:', error);
-    callback(DEFAULT_ACTIVE_POPUP);
+    console.warn('Active popup listener error:', error);
+    onError(error);
   });
 }
 

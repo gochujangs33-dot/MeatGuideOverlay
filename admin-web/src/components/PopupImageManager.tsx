@@ -88,6 +88,8 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
   // Active source toggle for the preview viewer: 'current' vs 'selected'
   const [previewSource, setPreviewSource] = useState<'current' | 'selected'>('current');
 
+  // Saving is blocked until the real server state has been loaded at least once.
+  const [isServerStateLoaded, setIsServerStateLoaded] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -98,7 +100,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
 
   // Subscribe to real-time updates of active popup
   useEffect(() => {
-    fetchActivePopup().then((info) => {
+    const applyServerState = (info: ActivePopupInfo) => {
       setActivePopup(info);
       setBubbleTexts({
         ko: info.bubbleTextKo || info.bubbleText || DEFAULT_ACTIVE_POPUP.bubbleTextKo!,
@@ -108,19 +110,15 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
       setAutoRebootEnabled(false);
       setAutoRebootTime(info.autoRebootTime || '10:00');
       setPopupAutoCloseMinutes(Math.max(0, Math.min(720, info.popupAutoCloseMinutes ?? 5)));
-    }).catch(console.error);
+      setIsServerStateLoaded(true);
+    };
+    const reportLoadError = (error: unknown) => {
+      console.error('Failed to load active popup:', error);
+      setErrorMessage('서버에서 현재 설정을 불러오지 못했습니다. 기존 설정을 덮어쓰지 않도록 적용을 막았습니다. 네트워크를 확인한 뒤 새로고침해 주세요.');
+    };
 
-    const unsubscribe = subscribeToActivePopup((info) => {
-      setActivePopup(info);
-      setBubbleTexts({
-        ko: info.bubbleTextKo || info.bubbleText || DEFAULT_ACTIVE_POPUP.bubbleTextKo!,
-        en: info.bubbleTextEn || DEFAULT_ACTIVE_POPUP.bubbleTextEn!,
-        ja: info.bubbleTextJa || DEFAULT_ACTIVE_POPUP.bubbleTextJa!
-      });
-      setAutoRebootEnabled(false);
-      setAutoRebootTime(info.autoRebootTime || '10:00');
-      setPopupAutoCloseMinutes(Math.max(0, Math.min(720, info.popupAutoCloseMinutes ?? 5)));
-    });
+    fetchActivePopup().then(applyServerState).catch(reportLoadError);
+    const unsubscribe = subscribeToActivePopup(applyServerState, reportLoadError);
 
     return () => unsubscribe();
   }, []);
@@ -266,7 +264,7 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
     autoRebootTime !== (activePopup.autoRebootTime || '10:00') ||
     popupAutoCloseMinutes !== (activePopup.popupAutoCloseMinutes ?? 5);
 
-  const hasChanges = hasAnyFileSelected || hasBubbleTextChanged || hasPowerSettingsChanged;
+  const hasChanges = isServerStateLoaded && (hasAnyFileSelected || hasBubbleTextChanged || hasPowerSettingsChanged);
 
   const handleApplyToTablet = async () => {
     if (!hasChanges) return;
