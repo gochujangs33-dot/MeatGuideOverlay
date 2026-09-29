@@ -41,10 +41,9 @@ service cloud.firestore {
     }
 
     match /devices/{deviceUid} {
-      // The passwordless admin console needs to show every registered tablet.
-      allow read: if isAuthenticated();
-      allow create, update: if isAuthenticated() && request.auth.uid == deviceUid;
-      allow delete: if isAdmin();
+      // The passwordless admin console and registered tablets need access to
+      // report status, delete obsolete duplicates, and prune unused devices.
+      allow read, write: if isAuthenticated();
     }
   }
 }

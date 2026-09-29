@@ -90,7 +90,7 @@ class PreferencesManager(private val context: Context) {
     }
 
     suspend fun setDeviceName(name: String) {
-        context.dataStore.edit { it[KEY_DEVICE_NAME] = name }
+        context.dataStore.edit { it[KEY_DEVICE_NAME] = name.trim() }
     }
 
     suspend fun setAutoLaunchKiosk(enabled: Boolean) {

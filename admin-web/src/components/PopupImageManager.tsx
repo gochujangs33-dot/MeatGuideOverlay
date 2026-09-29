@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   UploadCloud,
   CheckCircle2,
@@ -16,7 +16,12 @@ import {
 } from 'lucide-react';
 import { ActivePopupInfo, DeviceStatus, SupportedLanguage } from '../types/popup';
 import { collection, firestore, onSnapshot } from '../services/firebase';
-import { fetchLatestAppVersionCode } from '../services/tabletStatus';
+import {
+  deduplicateTablets,
+  fetchLatestAppVersionCode,
+  isTableDevice,
+  sortTablets
+} from '../services/tabletStatus';
 import {
   fetchActivePopup,
   subscribeToActivePopup,
@@ -141,6 +146,11 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
     );
     return () => unsubscribe();
   }, []);
+
+  const validTablets = useMemo(() => {
+    const deduped = deduplicateTablets(deviceStatuses);
+    return sortTablets(deduped.filter(isTableDevice));
+  }, [deviceStatuses]);
 
   // Update object URL previews when files change
   useEffect(() => {
@@ -496,19 +506,17 @@ export const PopupImageManager: React.FC<Props> = ({ onLogout, userEmail }) => {
                   </p>
                 </div>
                 <span style={{ fontSize: '11px', fontWeight: 700, color: '#0F766E', backgroundColor: '#F0FDFA', padding: '4px 8px', borderRadius: '6px' }}>
-                  {deviceStatuses.length}대 등록
+                  {validTablets.length}대 등록
                 </span>
               </div>
 
-              {deviceStatuses.length === 0 ? (
+              {validTablets.length === 0 ? (
                 <div style={{ fontSize: '12px', color: '#94A3B8', backgroundColor: '#F8FAFC', borderRadius: '8px', padding: '12px' }}>
                   아직 상태를 보고한 태블릿이 없습니다. 태블릿 앱을 실행하고 인터넷에 연결해 주세요.
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {[...deviceStatuses]
-                    .sort((a, b) => (a.deviceName || a.id).localeCompare(b.deviceName || b.id, 'ko'))
-                    .map((device) => {
+                  {validTablets.map((device: DeviceStatus) => {
                       const isLatest = (device.appVersionCode || 0) >= expectedAppVersionCode;
                       const online = isDeviceOnline(device.lastSeen);
                       return (

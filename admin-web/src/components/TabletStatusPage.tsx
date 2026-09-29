@@ -1,6 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { collection, firestore, onSnapshot } from '../services/firebase';
-import { appUpdateState, fetchLatestAppVersionCode, isTabletOnline, sortTablets, toDate } from '../services/tabletStatus';
+import {
+  appUpdateState,
+  deduplicateTablets,
+  deleteTabletDevice,
+  fetchLatestAppVersionCode,
+  isTableDevice,
+  isTabletOnline,
+  sortTablets,
+  toDate
+} from '../services/tabletStatus';
 import type { DeviceStatus } from '../types/popup';
 import './TabletStatusPage.css';
 
@@ -56,7 +65,21 @@ export const TabletStatusPage: React.FC = () => {
     };
   }, []);
 
-  const tablets = useMemo(() => sortTablets(devices), [devices]);
+  const tablets = useMemo(() => {
+    // 1. Deduplicate by table name and auto-prune stale duplicates in Firestore
+    const deduped = deduplicateTablets(devices, (staleId) => {
+      deleteTabletDevice(staleId).catch((err) => {
+        console.warn('Auto-pruning stale duplicate tablet failed:', staleId, err);
+      });
+    });
+
+    // 2. Filter out non-table / test entries (e.g. '테스트', empty names)
+    const validTables = deduped.filter(isTableDevice);
+
+    // 3. Sort naturally (테이블-01, 테이블-02, ... 테이블-19)
+    return sortTablets(validTables);
+  }, [devices]);
+
   const onlineCount = tablets.filter((d) => isTabletOnline(d.lastSeen, now)).length;
   const outdatedCount = tablets.filter((d) => appUpdateState(d, latestCode) === 'outdated').length;
   const selected = tablets.find((d) => d.id === selectedId) ?? null;
@@ -153,6 +176,26 @@ export const TabletStatusPage: React.FC = () => {
               <dt>Android</dt>
               <dd>{selected.androidVersion || '?'}</dd>
             </dl>
+
+            <div className="ts-sheet-actions">
+              <button
+                type="button"
+                className="ts-delete-btn"
+                onClick={async () => {
+                  const targetName = selected.deviceName || selected.id;
+                  if (window.confirm(`'${targetName}' 태블릿을 서버 목록에서 삭제하시겠습니까?`)) {
+                    try {
+                      await deleteTabletDevice(selected.id);
+                      setSelectedId(null);
+                    } catch (error) {
+                      alert('기기 삭제에 실패했습니다. 네트워크를 확인해 주세요.');
+                    }
+                  }
+                }}
+              >
+                기기 등록 삭제
+              </button>
+            </div>
           </section>
         </div>
       )}

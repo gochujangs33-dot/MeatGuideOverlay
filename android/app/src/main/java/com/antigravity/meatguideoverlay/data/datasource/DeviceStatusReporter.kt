@@ -31,7 +31,8 @@ class DeviceStatusReporter(context: Context) {
             val auth = FirebaseAuth.getInstance()
             val user = auth.currentUser ?: auth.signInAnonymously().await().user
             val deviceUid = user?.uid ?: return
-            val deviceName = preferencesManager.deviceNameFlow.first().ifBlank { "미지정 태블릿" }
+            val rawName = preferencesManager.deviceNameFlow.first().ifBlank { "미지정 태블릿" }
+            val deviceName = rawName.trim()
             val deviceData = mapOf(
                 "deviceUid" to deviceUid,
                 "deviceName" to deviceName,
@@ -51,14 +52,50 @@ class DeviceStatusReporter(context: Context) {
                 "serviceState" to "RUNNING",
                 "lastSeen" to FieldValue.serverTimestamp()
             )
-            FirebaseFirestore.getInstance()
+
+            val firestore = FirebaseFirestore.getInstance()
+
+            // 1. Report current device status
+            firestore
                 .collection(COLLECTION_DEVICES)
                 .document(deviceUid)
                 .set(deviceData, SetOptions.merge())
                 .await()
+
+            // 2. Prune any stale duplicate entries for this table
+            // (prevents duplicate entries when the app is updated, reinstalled, or re-authenticated)
+            if (deviceName.isNotBlank() && deviceName != "미지정 태블릿") {
+                pruneDuplicateTableEntries(firestore, deviceName, deviceUid)
+            }
         } catch (error: Exception) {
             // Status reporting must never interrupt the overlay service.
             Log.w(TAG, "Failed reporting device status: ${error.message}")
+        }
+    }
+
+    private suspend fun pruneDuplicateTableEntries(
+        firestore: FirebaseFirestore,
+        deviceName: String,
+        currentDeviceUid: String
+    ) {
+        try {
+            val querySnapshot = firestore.collection(COLLECTION_DEVICES)
+                .whereEqualTo("deviceName", deviceName)
+                .get()
+                .await()
+
+            for (doc in querySnapshot.documents) {
+                if (doc.id != currentDeviceUid) {
+                    Log.i(TAG, "Pruning obsolete duplicate device entry: ${doc.id} for $deviceName")
+                    try {
+                        doc.reference.delete().await()
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Could not delete obsolete duplicate doc ${doc.id}: ${e.message}")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "Duplicate pruning skipped: ${e.message}")
         }
     }
 

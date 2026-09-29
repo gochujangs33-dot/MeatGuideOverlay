@@ -229,3 +229,31 @@
   font-weight: 600;
   overflow-wrap: anywhere;
 }
+
+.ts-sheet-actions {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.ts-delete-btn {
+  width: 100%;
+  padding: 13px;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.ts-delete-btn:hover {
+  background-color: #fecaca;
+}
+
+.ts-delete-btn:active {
+  background-color: #fca5a5;
+}
+
