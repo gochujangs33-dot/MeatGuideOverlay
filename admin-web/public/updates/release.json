@@ -1,7 +1,7 @@
 ﻿{
-    "versionCode":  22,
-    "versionName":  "1.0.21",
-    "downloadUrl":  "https://meatguideoverlay.web.app/updates/meatguide-overlay-22.bin",
-    "sha256":  "347e629c48ed171b595f357eb667fd4be966a00aec9d002fa68d313070c7c1ba",
-    "notes":  "태블릿 현황 페이지용 설정 정보(키오스크 앱, 권한 상태, 업데이트 날짜) 보고 추가"
+    "versionCode":  23,
+    "versionName":  "1.0.22",
+    "downloadUrl":  "https://meatguideoverlay.web.app/updates/meatguide-overlay-23.bin",
+    "sha256":  "b71a2b6b6b2db5024dc1c5b53bef978b93bbbaa20d7d2b0c89014006baa85a83",
+    "notes":  "고기 안내 팝업 우측 상단 닫기 버튼 터치 영역 확장 및 터치 반응성 개선"
 }
