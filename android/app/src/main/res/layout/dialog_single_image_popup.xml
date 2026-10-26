@@ -104,47 +104,65 @@
             android:textSize="13sp" />
     </LinearLayout>
 
-    <!-- TOP-RIGHT: Large close button -->
+    <!-- TOP-RIGHT: Large close button with generous touch target extending to edges and surroundings -->
     <FrameLayout
-        android:id="@+id/btnClosePopup"
+        android:id="@+id/btnCloseTouchArea"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|end"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:background="@drawable/bg_popup_close_button"
         android:clickable="true"
-        android:elevation="18dp"
         android:focusable="true"
-        android:minWidth="138dp"
-        android:minHeight="54dp"
-        android:paddingStart="21dp"
-        android:paddingTop="9dp"
-        android:paddingEnd="21dp"
-        android:paddingBottom="9dp">
+        android:contentDescription="@string/dialog_close"
+        android:elevation="18dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:paddingStart="64dp"
+        android:paddingTop="0dp"
+        android:paddingEnd="0dp"
+        android:paddingBottom="64dp">
 
-        <LinearLayout
+        <FrameLayout
+            android:id="@+id/btnClosePopup"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_gravity="top|end"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_popup_close_button"
+            android:clickable="false"
+            android:focusable="false"
+            android:duplicateParentState="true"
+            android:elevation="2dp"
+            android:minWidth="138dp"
+            android:minHeight="54dp"
+            android:paddingStart="21dp"
+            android:paddingTop="9dp"
+            android:paddingEnd="21dp"
+            android:paddingBottom="9dp">
 
-            <ImageView
-                android:layout_width="33dp"
-                android:layout_height="33dp"
-                android:contentDescription="@string/dialog_close"
-                android:src="@drawable/ic_close_24"
-                app:tint="#FFFFFF" />
-
-            <TextView
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="9dp"
-                android:text="@string/dialog_close"
-                android:textColor="#FFFFFF"
-                android:textSize="27sp"
-                android:textStyle="bold" />
-        </LinearLayout>
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="33dp"
+                    android:layout_height="33dp"
+                    android:contentDescription="@string/dialog_close"
+                    android:src="@drawable/ic_close_24"
+                    app:tint="#FFFFFF" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="9dp"
+                    android:text="@string/dialog_close"
+                    android:textColor="#FFFFFF"
+                    android:textSize="27sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </FrameLayout>
     </FrameLayout>
 
     <!-- Fallback Text (only shown if image is missing/loading) -->

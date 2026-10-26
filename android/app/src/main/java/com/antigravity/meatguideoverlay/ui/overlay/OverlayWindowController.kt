@@ -512,10 +512,16 @@ class OverlayWindowController(
             loadPopupLanguageImage("ja")
         }
 
-        // The popup can only be dismissed by this explicit close button.
-        binding.btnClosePopup.setOnClickListener {
+        // The popup can only be dismissed by this explicit close button or its surrounding touch area.
+        val handleCloseAction = View.OnClickListener {
             closeSingleImagePopup()
         }
+        binding.btnCloseTouchArea.setOnClickListener(handleCloseAction)
+        binding.btnClosePopup.setOnClickListener(handleCloseAction)
+        // Keep child non-clickable for touch dispatch so the entire 64dp surrounding area
+        // and button surface act as a unified touch target with zero boundary drop.
+        binding.btnClosePopup.isClickable = false
+        binding.btnClosePopup.isFocusable = false
 
         try {
             // Hide the floating overlay before the opaque popup is attached so
